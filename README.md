@@ -2,5 +2,5 @@
 Using Adaptive Cuckoo filters for p2p keyword search
 
 
-RUN:
-python create_nodes.py
+TEST RUN:
+python create_nodes.py 1000
