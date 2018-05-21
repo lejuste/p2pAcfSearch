@@ -1,10 +1,12 @@
 # p2pAcfSearch
 Using Adaptive Cuckoo filters for p2p keyword search
 
-<<<<<<< HEAD
 Programs:
 pie.py -- creates large dynamic dataset
 create_nodes.py -- creates large set of nodes
+
+
+
 
 File: pie.py
 Usage: pie.py [options]
@@ -19,8 +21,6 @@ Options:
                         output file to save data
   -i INPUT, --input=INPUT
                         input file for a list of keyword options
-
-
 
 EXAMPLE RUN:
 	python pie.py -f 1000000 -k 6
@@ -38,8 +38,3 @@ Options:
 EXAMPLE RUN:
 	python create_nodes.py -n 1000
 	
-=======
-
-TEST RUN:
-python create_nodes.py 1000
->>>>>>> a1f886dcab11aa77016f18cac535617acc74ec9a
