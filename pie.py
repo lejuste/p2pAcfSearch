@@ -8,7 +8,7 @@ from optparse import OptionParser
 
 #inputs: number of files, number of keywords, input file, output file
 parser = OptionParser()
-parser.add_option("-f", "--files", dest="files", help="number of files for the system", default=100)
+parser.add_option("-f", "--files", dest="files", help="number of files for the system", default=10)
 parser.add_option("-k", "--keywords", dest="keys", help="keywords per file", default=5)
 parser.add_option("-o", "--output", dest="output", help="output file to save data", default="data.csv")
 parser.add_option("-i", "--input", dest="input", help="input file for a list of keyword options", default="google-10000-english-master/google-10000-english-usa-no-swears-medium.txt")
