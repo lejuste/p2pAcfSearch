@@ -3,8 +3,10 @@ import sys
 import csv
 import time
 import random
-# import matplotlib.pyplot as plt
 from optparse import OptionParser
+
+from bloom import BitVector
+from bloom import Bloomfilter
 
 parser = OptionParser()
 parser.add_option("-n", "--nodes", dest="nodes", help="number of nodes created within the system", default=10)
@@ -124,9 +126,11 @@ def addFile(row,hash_list):
     print 'Adding ' + row[0] + 'into p2p system with keywords ' + str(row[1:])
     fileName = row[0]
 
+
     for keywords in row[1:]:
         # Determines the successor to file's specific keyword
         x = int(findOwner(keywords,hash_list))
+
         print fileName + ' belongs at ' + str(hash_list[x][1]) +' for keyword: '+str(keywords)
 
         # Adds new file to node's datastore
@@ -134,6 +138,12 @@ def addFile(row,hash_list):
         f = open('nodes/'+file_store, "a+")
         f.write('\nfile: ' + fileName + ' keywords: ' + keywords)
         f.close()
+
+
+        #build blooom filters for the entire node!!!
+        bloomObject = Bloomfilter('nodes/'+str(hash_list[x][1])+'/bloooom.txt')
+        bloomObject.addToFilter(fileName)
+
 
 #--------------------------------------------------------data setup---------------------------------------------------------------
 
@@ -154,6 +164,11 @@ def main():
     # Adds number of files from data[] 
     for x in range(number_of_files):
         addFile(data[x+1],hash_list) 
+
+
+    # bloomObject = Bloomfilter('bloombaby.txt')
+    # print 'Printing bloomObject:'
+    # print bloomObject
 
 
     # plotlist = []
