@@ -145,23 +145,16 @@ def addFile(row,hash_list):
         bloomObject.addToFilter(fileName)
 
 def getFilesonNode(node):
-    print 'getting files at node %s' % (node)
+    print 'Getting files at node %s' % (node)
 
     lines = [line.rstrip('\n') for line in open('nodes/'+node+ '/file_store.txt')]
-    print lines
-
     fileNames =[]
     for line in lines[1:]:
         # print line.split()[1]
         fileNames.append(line.split()[1])
 
     return list(set(fileNames))
-    # keywords_list = query.split(" ")
-
-
-    # f = open('nodes/'+file_store+ '/file_store.txt', "r")
-    # f.write('\nfile: ' + fileName + ' keywords: ' + keywords)
-    # f.close()    
+ 
 
 
 #--------------------------------------------------------data setup---------------------------------------------------------------
@@ -179,35 +172,22 @@ def search_keywords(query,hash_list):
         print 'node %s has files with keyword %s ' % (str(hash_list[x][1]), key)
         search_nodes.append(str(hash_list[x][1]))
 
-    # print 'final search nodes list: %s' %(search_nodes)
-
-    #create bloom object for first node:
-    # get intersection for each node on list
-    # get intersection with that entire node object
-
-    # print 'filter for first node %s:' % (search_nodes[0])
-
+    # Identifies first node in search
     bloomObject = Bloomfilter('nodes/'+search_nodes[0]+'/bloooom.txt')
-    # print bloomObject
 
+    # finds intersection of all filters
     for node in search_nodes[1:]:
         print 'intersection for node %s' %(node)
         print getFilter(node,'hi')
         bloomObject.filter.rebuildVector(bloomObject.intersection(getFilter(node,'hi')))
 
-        # bloomObject.intersecti/on(getFilter(node,'hi'))
-
-    # print 'final object: %s'%(bloomObject)
-
+    # Searches for intersections with filter and self nodes
+    # Currently implemented where all nodes only have a single bloom filter for their own files
     filesForFirstNode = getFilesonNode(search_nodes[0])
     for file in filesForFirstNode:
         bloomObject.checkFilter(file)
 
     return filesForFirstNode
-    # print 'done'
-
-
-
 
 def getFilter(node_ip,keyword):
 
@@ -215,14 +195,6 @@ def getFilter(node_ip,keyword):
     contents = f.read()
     f.close()
     return contents   
-
-#for keyword bloom filters
-
-    # f = open('nodes/'+node_ip+'/bloooom_'+keyword+'.txt', "r")
-    # contents = f.read()
-    # print 'here are the contents at %s:\n %s' % (node_ip,contents)
-    # f.close()  
-
 
 
 #--------------------------------------------------------bloom search---------------------------------------------------------------
