@@ -1,6 +1,8 @@
 import math
 import hashlib
 import os.path
+import os
+
 
 #bit vector object
 class BitVector(object):
@@ -98,10 +100,10 @@ class Bloomfilter(object):
 
         if(self.filter.check(firstHash) and self.filter.check(secondHash)):
             print 'key: %s is possibly here' % key
-            return 1
+            return True
         else:
             print 'key: %s is definitely not here' % key
-            return 0
+            return False
 
     # update filter file with integer representation
     def updateFilterFile(self):
@@ -133,24 +135,35 @@ class Bloomfilter(object):
     def intersection(self,filter2):
         return self.filter.intersection(filter2)
 
+    def removeElementFromFilter(self):
+        self.updateFilterFile()
+
 
 def main():
 
     #tester code for bloom object
-    # bloomObject = Bloomfilter('bloombaby.txt')
-    # bloomObject2 = Bloomfilter('bf_keyword.txt')
+    bloomObject = Bloomfilter('bloombaby.txt')
+    bloomObject2 = Bloomfilter('bf_keyword.txt')
 
-    # # bloomObject.addToFilter('KKKKKKKK')
-    # # bloomObject.addToFilter('abcd')
+    # bloomObject.addToFilter('KKKKKKKK')
+    # bloomObject.addToFilter('abcd')
 
-    # print 'Printing bloomObject:'
-    # print bloomObject
+    print 'Printing bloomObject:'
+    print bloomObject
 
-    # print 'Printing bloomObject2:'
-    # print bloomObject2
+    print 'Printing bloomObject2:'
+    print bloomObject2
 
-    # print bloomObject.intersection(bloomObject2.filter.vector)
+    print bloomObject.intersection(bloomObject2.filter.vector)
+
+    print 'removing element from the filter'
+
+    bloomObject.removeElementFromFilter()
+
 
 
 if __name__== "__main__":
     main()
+
+
+

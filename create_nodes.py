@@ -79,11 +79,15 @@ def createFolder(directory):
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-            # makes file store file
-            file_store = directory+'file_store.txt'
-            f = open(file_store, "w+")
-            f.write('Files on node:')
-            f.close()
+            file_store = directory+'file_store.csv'
+
+            myFile = open(file_store, 'w')
+            with myFile:
+                writer = csv.writer(myFile)
+                writer.writerow(['Files on node:','keywords'])
+
+            myFile.close()
+
     except OSError:
         print ('Error: Creating directory. ' +  directory)
 
@@ -117,79 +121,257 @@ def retrieveData(data_csv):
     print 'made data object'
     return 
 
-# # Retrieve specific row of data set
-# def retrieveRow(row):
-#     return data[row]
-
 # Adds a given file, it is placed on nodes corresponding with file's keywords.
 def addFile(row,hash_list):
     print 'Adding ' + row[0] + 'into p2p system with keywords ' + str(row[1:])
     fileName = row[0]
 
 
-    for keywords in row[1:]:
+    for keyword in row[1:]:
         # Determines the successor to file's specific keyword
-        x = int(findOwner(keywords,hash_list))
+        x = int(findOwner(keyword,hash_list))
 
-        print fileName + ' belongs at ' + str(hash_list[x][1]) +' for keyword: '+str(keywords)
+        print fileName + ' belongs at ' + str(hash_list[x][1]) +' for keyword: '+str(keyword)
 
         # Adds new file to node's datastore
-        file_store = str(hash_list[x][1]) + '/file_store.txt'
-        f = open('nodes/'+file_store, "a+")
-        f.write('\nfile: ' + fileName + ' keywords: ' + keywords)
-        f.close()
+        file_store = str('nodes/'+ hash_list[x][1]) + '/file_store.csv'
 
+        
+        f = open(file_store, 'a')
+        writer = csv.writer(f)
+        writer.writerow([fileName,keyword])
 
-        #build blooom filters for the entire node!!!
-        bloomObject = Bloomfilter('nodes/'+str(hash_list[x][1])+'/bloooom.txt')
+        bloomObject = Bloomfilter('nodes/'+str(hash_list[x][1])+'/bloom_'+str(keyword)+'.txt')
         bloomObject.addToFilter(fileName)
 
 def getFilesonNode(node):
     print 'Getting files at node %s' % (node)
 
-    lines = [line.rstrip('\n') for line in open('nodes/'+node+ '/file_store.txt')]
+    with open('nodes/'+node+ '/file_store.csv', 'r') as f:
+        lines = list(csv.reader(f))
     fileNames =[]
     for line in lines[1:]:
-        # print line.split()[1]
-        fileNames.append(line.split()[1])
+        fileNames.append(line[0])
 
     return list(set(fileNames))
- 
 
+def getFilesForKeyword(node, keyword):
+    print 'Getting files at node %s' % (node)
+
+    with open('nodes/'+node+ '/file_store.csv', 'r') as f:
+        lines = list(csv.reader(f))
+    fileNames =[]
+    for line in lines[1:]:
+        if(keyword in line):
+            print keyword + ' is in the following: ' + str(line) + ', logging file ' + line[0] 
+            fileNames.append(line[0])
+        # fileNames.append(line[0])
+
+    return list(set(fileNames))
+
+# def getFilesForKeywords(node, keywords):
+#     print 'Getting files at node %s' % (node)
+
+#     with open('nodes/'+node+ '/file_store.csv', 'r') as f:
+#         lines = list(csv.reader(f))
+#     fileNames =[]
+#     for line in lines[1:]:
+
+
+#         # per line check that all keywords are 
+#         for keyword in keywords:
+#             if(keyword in line):
+#             print keyword + ' is in the following: ' + str(line) + ', logging file ' + line[0] 
+#             fileNames.append(line[0])
+
+#         # fileNames.append(line[0])
+
+#     return fileNames
+ 
+# def removeFilesonNode(node,fileName):
+
+#     print 'Getting files at node %s' % (node)
+#     lines = [line.rstrip('\n') for line in open('nodes/'+node+ '/file_store.txt')]
+#     fileNames =[]
+#     print lines[1:]
+#     for line in lines[1:]:
+#         # print line.split()[1]
+#         fileNames.append(line.split()[1])
+
+#     print list(set(fileNames))
+
+def bloomObjANDFiles(bloomObj,fileNames):
+
+
+ # bloomObject = Bloomfilter('nodes/'+search_nodes[0]+'/bloooom.txt')
+
+    # # finds intersection of all filters
+    # for node in search_nodes[1:]:
+    #     print 'intersection for node %s' %(node)
+    #     print getFilter(node)
+    #     bloomObject.filter.rebuildVector(bloomObject.intersection(getFilter(node)))
+
+    print 'fileNames before' + str(fileNames)
+
+    intersection = []
+    for curr_file in fileNames:
+        print 'fileName: ' + curr_file
+        if bloomObj.checkFilter(curr_file):
+            intersection.append(curr_file)
+
+    print 'fileNames after' + str(intersection)
+    return intersection
+    #NOTE: FAILS WHEN THE TWO NODES ARE HAPPEN TO HOLD 2 OF THE SAME FILES WITH DIFFERENT KEYWORDS
 
 #--------------------------------------------------------data setup---------------------------------------------------------------
 
 #--------------------------------------------------------bloom search---------------------------------------------------------------
-def search_keywords(query,hash_list):
-    keywords_list = query.split(" ")
+def search_keywords(query,hash_list,searchType):
+    keywords_list = query.strip(' ').split(" ")
     print keywords_list   
 
     #find a list of nodes with following keywords
     search_nodes = []
-
     for key in keywords_list:
         x = int(findOwner(key,hash_list))
         print 'node %s has files with keyword %s ' % (str(hash_list[x][1]), key)
         search_nodes.append(str(hash_list[x][1]))
 
-    # Identifies first node in search
-    bloomObject = Bloomfilter('nodes/'+search_nodes[0]+'/bloooom.txt')
+    if len(keywords_list) == 1:
+        return getFilesForKeyword(search_nodes[0], keywords_list[0])
+    else:
+        #     do something for first node
+        #     do something different for all other nodes
 
-    # finds intersection of all filters
-    for node in search_nodes[1:]:
-        print 'intersection for node %s' %(node)
-        print getFilter(node,'hi')
-        bloomObject.filter.rebuildVector(bloomObject.intersection(getFilter(node,'hi')))
+        # given 2 keywords
+        
+        # figure out host 1 has keyword 1
 
-    # Searches for intersections with filter and self nodes
-    # Currently implemented where all nodes only have a single bloom filter for their own files
-    filesForFirstNode = getFilesonNode(search_nodes[0])
-    for file in filesForFirstNode:
-        bloomObject.checkFilter(file)
+        # search_nodes[0]
+        # given this guy
 
-    return filesForFirstNode
+        #works for 2 keywords:
 
-def getFilter(node_ip,keyword):
+        # firstFilterObject = Bloomfilter('nodes/'+search_nodes[0]+'/'+'bloom_'+keywords_list[0]+'.txt')
+        # print 'intersection between filter of '+keywords_list[0]+' and files on node '+search_nodes[1] 
+        # print bloomObjANDFiles(firstFilterObject,getFilesonNode(search_nodes[1]))
+
+        filterObject = Bloomfilter('nodes/'+search_nodes[0]+'/'+'bloom_'+keywords_list[0]+'.txt')
+
+        # EXPLICIT SEARCH NEEDS TO SEND THE ACTUAL FILE NAMES
+        if searchType == 'explicit':
+            for node in search_nodes[1:]:
+                print 'intersection between filter of '+keywords_list[0]+' and files on node '+search_nodes[1] 
+                file_list = bloomObjANDFiles(filterObject,getFilesonNode(node))
+                print file_list
+                # newFilter  = made from file_list
+
+                # new filter AND node list
+
+                filterObject = Bloomfilter('new_filter_temp.txt')
+                for file in file_list:
+                    filterObject.addToFilter(file)
+
+                # make newnew filter
+
+                # newnew filter AND node list
+
+            return file_list
+                # print 'intersection for node %s' %(node)
+                # print getFilter(node)
+                # bloomObject.filter.rebuildVector(bloomObject.intersection(getFilter(node)))
+
+
+
+        # THROUGHPUT SEARCH NEEDS TO SEND THE NEWLY CREATED FILTERS
+        elif searchType == 'throughput':
+            print 'to be implemented: throughput'
+        else:
+            return 'ERROR: invalid search type.'
+
+        # search host 2 given a bloom filter
+        
+        # send the filter of the first keyword to host 2
+
+        # host 2 sends host 1 the files that are associated with the filter sent. 
+        # host 1 will send only interection of all of the files that are interection with itself
+
+        return 'too many keywords'
+
+
+    # cases:
+
+    # find first host
+
+    # only one keyword
+    #     use first host
+    #     search for file with keyword
+    #     return a list of files with those keywords
+
+    # multiple keywords
+    #     find hosts for every keyword
+    #         get its bloom filter
+    #             if bloom filter matches
+    #                 find file name that matches
+    #                 return fileName
+    #             else 
+    #                 do nothing
+
+    # # double check file name in file intersetcion?
+
+    # mulitple keywords:
+
+
+
+
+
+
+
+
+
+
+
+
+    #     create a bloom filter for first node
+    #     retrieve all bloom filters for the other hosts
+    #     create an intersection
+
+    # keyword1 = Bloomfilter('nodes/'+search_nodes[0]+'/bloooom.txt')
+
+    # each host has a bloom filter for each of its keywords that it maintains
+
+
+
+
+    # # search search_nodes[0]
+    # # return list of files with the keyword
+    # print 'length of search nodes: '+str(len(search_nodes))+ ', ' + str(len(keywords_list))
+    # print str(search_nodes)
+    # print str(keywords_list)
+
+
+    # # Identifies first node in search
+    # bloomObject = Bloomfilter('nodes/'+search_nodes[0]+'/bloooom.txt')
+
+    # # finds intersection of all filters
+    # for node in search_nodes[1:]:
+    #     print 'intersection for node %s' %(node)
+    #     print getFilter(node)
+    #     bloomObject.filter.rebuildVector(bloomObject.intersection(getFilter(node)))
+
+    # # Searches for intersections with filter and self nodes
+    # # Currently implemented where all nodes only have a single bloom filter for their own files
+
+    # good_files = []
+
+    # filesForFirstNode = getFilesonNode(search_nodes[0])
+    # for file in filesForFirstNode:
+    #     if bloomObject.checkFilter(file):
+    #         good_files.append(file)
+
+    # return good_files
+
+def getFilter(node_ip):
 
     f = open('nodes/'+node_ip+'/bloooom.txt', "r")
     contents = f.read()
@@ -201,12 +383,11 @@ def getFilter(node_ip,keyword):
 
 def main():
 
+    # removeFilesonNode('194.245.61.39:6445',"VZURDTFKENEG")
 #-------------------------------------------------------p2p datastore setup-------------------------------------------------------
 
     address_list = makeNodes(nnodes)
     hash_list = makeHashList(address_list)
-    # print 'hash_list'
-    # print hash_list
     makeNodeFolders(address_list)
 
 #-------------------------------------------------------p2p datastore setup-------------------------------------------------------
@@ -220,12 +401,12 @@ def main():
     while(1):
         keywords = raw_input("Which keywords are you looking for associated with files?")
         
-        queryResults = search_keywords(keywords,hash_list)
+        queryResults = search_keywords(keywords,hash_list,'explicit')
 
         print '\n Here r ur files dood:\n'
-        for file in queryResults:
-            print file
-
+        print queryResults
+        # for file in queryResults:
+        #     print file
         print 'have a nice day bud.\n'
 
 
