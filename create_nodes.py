@@ -1,4 +1,3 @@
-import os
 import sys
 import csv
 import time
@@ -9,7 +8,7 @@ from bloom import BitVector
 from bloom import Bloomfilter
 
 parser = OptionParser()
-parser.add_option("-n", "--nodes", dest="nodes", help="number of nodes created within the system", default=10)
+parser.add_option("-n", "--nodes", dest="nodes", help="number of nodes created within the system", default=100)
 parser.add_option("-i", "--input", dest="input", help="data file for data store", default="data.csv")
 parser.add_option("-f", "--files", dest="fileAmount", help="number of files to initially add to the network", default=5)
 
@@ -22,7 +21,7 @@ number_of_files = int(options.fileAmount)
 data = []
 
 #settings:
-SIZE = nnodes #note not all nodes will be created because of repeated values due to psuedorandom random function
+MAXSIZE = 3000 #note not all nodes will be created because of repeated values due to psuedorandom random function
 # DATASIZE = data
 
 #-------------------------------------------------------p2p datastore setup-------------------------------------------------------
@@ -36,7 +35,7 @@ class Address(object):
         self.id = "%s:%s" % (self.ip,self.port)
 
     def __hash__(self):
-        self.hash = hash(self.id) % SIZE
+        self.hash = hash(self.id) % MAXSIZE
         return self.hash
 
     def __str__(self):
@@ -46,9 +45,9 @@ class Address(object):
 def makeHashList(address_list):
     hash_list = []
     for x in range(len(address_list)):
-        addressHash = (address_list[x].hash)
-        address = (address_list[x].id)
-        single = [addressHash,address]
+        addressHash = (address_list[x].hash) #hash the address
+        address = (address_list[x].id) # get the ip and port
+        single = [addressHash,address] # create a tuple with the hash and then the address
         hash_list.append(single)
 
     return sorted(hash_list)
@@ -103,12 +102,12 @@ def makeNodeFolders(address_list):
 
 # Find the immediate successor to a file/keyword given a list of nodes
 def findOwner(file,hash_list):
-    file_hash = abs(hash(file))% SIZE
+    file_hash = abs(hash(file))% MAXSIZE
     for i in range(len(hash_list)):
-        # print 'i: ' + str(i) + ' file_hash: ' + str(file_hash) + ' hash_list[i][0]: ' + str(hash_list[i][0])
+        print 'i: ' + str(i) + ' file_hash: ' + str(file_hash) + ' hash_list[i][0]: ' + str(hash_list[i][0])
         if(file_hash < hash_list[i][0]):
-            return str(hash_list[(i)%len(hash_list)][0])
-    return hash_list[0][0]
+            return str(hash_list[i][1])
+    return hash_list[0][1]
     #check for null then set to first indicie
 
 # Fill global data[] object from the input file
@@ -129,21 +128,34 @@ def addFile(row,hash_list):
 
     for keyword in row[1:]:
         # Determines the successor to file's specific keyword
-        x = int(findOwner(keyword,hash_list))
 
-        print fileName + ' belongs at ' + str(hash_list[x][1]) +' for keyword: '+str(keyword)
+        owner = findOwner(keyword,hash_list)
+
+        # print fileName + ' belongs at ' + str(hash_list[x][1]) +' for keyword: '+str(keyword)
+
+        # # Adds new file to node's datastore
+        # file_store = str('nodes/'+ hash_list[x][1]) + '/file_store.csv'
+
+        
+        # f = open(file_store, 'a')
+        # writer = csv.writer(f)
+        # writer.writerow([fileName,keyword])
+
+        # bloomObject = Bloomfilter('nodes/'+str(hash_list[x][1])+'/bloom_'+str(keyword)+'.txt')
+        # bloomObject.addToFilter(fileName)
+
+        print fileName + ' belongs at ' + owner +' for keyword: '+str(keyword)
 
         # Adds new file to node's datastore
-        file_store = str('nodes/'+ hash_list[x][1]) + '/file_store.csv'
+        file_store = str('nodes/'+ owner + '/file_store.csv')
 
         
         f = open(file_store, 'a')
         writer = csv.writer(f)
         writer.writerow([fileName,keyword])
 
-        bloomObject = Bloomfilter('nodes/'+str(hash_list[x][1])+'/bloom_'+str(keyword)+'.txt')
+        bloomObject = Bloomfilter('nodes/'+owner+'/bloom_'+str(keyword)+'.txt')
         bloomObject.addToFilter(fileName)
-
 def getFilesonNode(node):
     print 'Getting files at node %s' % (node)
 
@@ -256,36 +268,53 @@ def search_keywords(query,hash_list,searchType):
         # print 'intersection between filter of '+keywords_list[0]+' and files on node '+search_nodes[1] 
         # print bloomObjANDFiles(firstFilterObject,getFilesonNode(search_nodes[1]))
 
+        # retrieve bloom filter for first node
         filterObject = Bloomfilter('nodes/'+search_nodes[0]+'/'+'bloom_'+keywords_list[0]+'.txt')
 
         # EXPLICIT SEARCH NEEDS TO SEND THE ACTUAL FILE NAMES
+        #send filter filter filter file names file names file names
         if searchType == 'explicit':
             for node in search_nodes[1:]:
-                print 'intersection between filter of '+keywords_list[0]+' and files on node '+search_nodes[1] 
+                # print 'intersection between filter of '+keywords_list[0]+' and files on node '+search_nodes[1] 
+                
+                # get a list of files for the current node that are in the filter
                 file_list = bloomObjANDFiles(filterObject,getFilesonNode(node))
-                print file_list
-                # newFilter  = made from file_list
+                
+                # print file_list
 
-                # new filter AND node list
+                # create a new filter object is created for th new file names but this isnt really true
+                # the filter object isnt over written because it exists on the same system
 
                 filterObject = Bloomfilter('new_filter_temp.txt')
                 for file in file_list:
                     filterObject.addToFilter(file)
-
-                # make newnew filter
-
-                # newnew filter AND node list
-
             return file_list
-                # print 'intersection for node %s' %(node)
-                # print getFilter(node)
-                # bloomObject.filter.rebuildVector(bloomObject.intersection(getFilter(node)))
-
 
 
         # THROUGHPUT SEARCH NEEDS TO SEND THE NEWLY CREATED FILTERS
+        # send filter filter filter filter then filenames once
+
         elif searchType == 'throughput':
             print 'to be implemented: throughput'
+
+            for node in search_nodes[1:]:
+                # create a filter that in universal and used then finallly use that filter against the last node
+
+                # print 'intersection between filter of '+keywords_list[0]+' and files on node '+search_nodes[1] 
+                
+                # get a list of files for the current node that are in the filter
+                file_list = bloomObjANDFiles(filterObject,getFilesonNode(node))
+                
+                # print file_list
+
+                # create a new filter object is created for th new file names but this isnt really true
+                # the filter object isnt over written because it exists on the same system
+                # devlope a new ya to create a new filter object 
+                filterObject = Bloomfilter('new_filter_temp.txt')
+                for file in file_list:
+                    filterObject.addToFilter(file)
+            return file_list
+
         else:
             return 'ERROR: invalid search type.'
 
@@ -386,8 +415,10 @@ def main():
     # removeFilesonNode('194.245.61.39:6445',"VZURDTFKENEG")
 #-------------------------------------------------------p2p datastore setup-------------------------------------------------------
 
-    address_list = makeNodes(nnodes)
+    address_list = makeNodes(nnodes) # can be less than total size of the hash nodes
+
     hash_list = makeHashList(address_list)
+    print hash_list
     makeNodeFolders(address_list)
 
 #-------------------------------------------------------p2p datastore setup-------------------------------------------------------
