@@ -5,6 +5,7 @@ Programs:
 pie.py -- Generates dynamic data file
 create_nodes.py -- creates large set of nodes
 
+node_app.py -- Flask application for each node within the network
 
 
 
@@ -46,3 +47,51 @@ EXAMPLE RUN:
   python create_nodes.py -n 10 -i data1.csv -f 3	
 
   makes n nodes and stores f files from the input data (i)
+
+
+DOCKER EXAMPLE RUN:
+  ./A_run.sh in one node
+  ./B_run.sh in another node
+
+
+
+  PUT to localhost:8081/data with 
+    {
+    "fileName":"Johnny",
+    "keywords":[ "Honda", "Toyota", "Kia" ]
+    }
+
+  PUT to localhost:8038/data with 
+    {
+    "fileName":"John",
+    "keywords":[ "Ford", "BMW", "Fiat" ]
+    }
+
+
+
+  GET  to localhost:8038/throwup should show:
+  {
+    "count": 2,
+    "lookup": {
+        "John": [
+            "Fiat"
+        ],
+        "Johnny": [
+            "Honda",
+            "Toyota",
+            "Kia"
+        ]
+    }
+  }
+
+  GET  to localhost:8081/throwup should show:
+  {
+      "count": 1,
+      "lookup": {
+          "John": [
+              "Ford",
+              "BMW"
+          ]
+      }
+  }
+

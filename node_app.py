@@ -18,7 +18,6 @@ num_keywords = os.environ.get('num_keywords')
 MAXSIZE = 3000 #note not all nodes will be created because of repeated values due to psuedorandom random function
 
 
-
 # ----------------------------- HELPER FUNCTIONS --------------------------------------------------
 def hashIt(input1):
     # return abs(hash(str(input1))%MAXSIZE)
@@ -94,6 +93,14 @@ def findOwner(file,hash_list):
     return str(hash_list[0][1])
     #check for null then set to first indicie
 
+
+
+# INPUT: keywords - tags for the given file
+#        hashlist - tuple list of hash(ip:port),ip:port
+#        fileName - file name / file data
+# OUTPUT: node number in hashlist for 
+
+# Find the immediate successor to a file/keyword given a list of nodes
 def addFile(fileName,keywords,hash_list):
     global ip_port
     print 'add file is called.'
