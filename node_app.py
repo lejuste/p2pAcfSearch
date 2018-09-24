@@ -5,6 +5,7 @@ import os
 import sys
 import operator
 import hashlib
+from bloom_modified import Bloomfilter
 
 app = Flask(__name__)
 
@@ -16,31 +17,47 @@ num_keywords = os.environ.get('num_keywords')
 
 
 MAXSIZE = 3000 #note not all nodes will be created because of repeated values due to psuedorandom random function
+bloomDict = dict()
 
 
 # ----------------------------- HELPER FUNCTIONS --------------------------------------------------
 def hashIt(input1):
     # return abs(hash(str(input1))%MAXSIZE)
+    # dont do an int to eliminate 
     return(abs(int(hashlib.sha224(input1).hexdigest(),16))%MAXSIZE)
     # return abs(hash(str(hash(str(input)))))
 
 
+def bloomItemExists(keyword):
+    global bloomDict
+    for item in bloomDict:
+        if item == keyword:
+            return True
+    return False
+
+def bloomItemAdd(keyword,fileName):
+    global bloomDict
+
+
+
+
+
+
+
+    if(bloomItemExists(keyword)):
+        keyBloom = lookup.get(keyword, [])
+        keyBloom.addToFilter(fileName)
+
+
+
+def bloomItemCheck(keyword):
+
+
+
+def bloomItemIntersection():
+
+
 # ----------------------------- DIRECTORY FOR ROUTING ---------------------------------------------
-
-#address objects for each node within the data store system
-class Address(object):
-    def __init__(self, ip, port):
-        self.ip = ip
-        self.port = int(port)
-        self.hash = 0
-        self.id = "%s:%s" % (self.ip,self.port)
-
-    def __hash__(self):
-        self.hash = hash(self.id) % SIZE
-        return self.hash
-
-    def __str__(self):
-        return "[\"%s\", \"%s\", %s, %s]" % (self.id, self.ip, self.port, self.hash)
 
 # INPUT: view - list of strings ip:port
 # OUTPUT: sorted tuple list of hash(ip:port),ip:port
@@ -58,6 +75,7 @@ def makeHashList(address_list):
     return sorted(hash_list)
 
 # ----------------------------- SETUP HOST LIST / HOST DICT ---------------------------------------
+
 hostlist = []
 if VIEW is None:
     hostlist.append(ip_port)
@@ -66,12 +84,10 @@ else:
 hostDictionary = dict((host,hashIt(host)) for host in hostlist)
 hash_list = makeHashList(hostlist)
 
-
-
 # ----------------------------- LOCAL VARIABLES ---------------------------------------------------
+
 lookup = {}
 local_host_hash = hashIt(str(IP_ENV))
-
 
 #--------------------------------------------------------data setup---------------------------------------------------------------
 
@@ -92,7 +108,6 @@ def findOwner(file,hash_list):
     print 'file_hash ' + str(file_hash)                    
     return str(hash_list[0][1])
     #check for null then set to first indicie
-
 
 
 # INPUT: keywords - tags for the given file
@@ -132,29 +147,211 @@ def addFile(fileName,keywords,hash_list):
         return (make_response(r.text,r.status_code,{'Content-Type':'application/json'}))  
 
 
+# INPUT: node,ip - node ip address and port
+#        keyword - keyword to search for on the node
+# OUTPUT: a list of the file names
+
+# Find the immediate successor to a file/keyword given a list of nodes
+def getFileNamesForKeyword(keyword):
+    global lookup
+    global ip_port
+    print 'getFiles at Node ' + ip_port + '\nkeyword'
+    print keyword
+    print 'kvs'
+    print kvs
+
+    files = []
+
+    for fileName in lookup:
+        keywords = lookup.get(fileName, [])
+        print 'keywords: ' + keywords + ' in ' + fileName
+        for tag in keywords:
+            if(keyword == tag):
+                files.append(fileName)
+    return list(set(files))
+
+
+# def search_keywords(keywords,hash_list,searchType):
+#     print 'keywords'
+#     print keywords
+#     print 'hash_list'
+#     print hash_list
+
+#     if len(keywords) == 0:
+#         j = jsonify(msg='no keywords', files=[], keywords = keywords)
+#         return (make_response(j,200,{'Content-Type':'application/json'}))  
+
+
+#     get the filter for each file
+
+
+
+
+
+#     create a list of the hosts for each hostlist
+#         if only one place, check the bloom filter for the associated word
+#         and return files assocoated
+#         get the file with the assocoated keyword
+
+
+#         figure out if you own this request:
+
+
+#         if not:
+#             forward request to person with first keyword to /internalsearchrequest
+
+
+
+
+#             get bloom filter for first keyword
+
+
+#     return the files to the original node (needs to keep the original request ip_port)
+
+#     create and forward the remaining keywords.    
+#     either way you need to forward the keywords for search_nodes
+
+
+#     base off of remaining keywords
+
+
+
+
+#     total latency???
+
+
+
+#     calculate totoal latency from the first touched node?
+
+
+
+#     explicit return throught http requests
+
+
+#     touched node -> keyword 1 node -> keyword 2 node -> keyword 1 node -> touched node 
+
+
+
+
+
+
+
+
+#     #find a list of nodes with following keywords
+#     fileLocations = []
+#     for keyword in keywords:
+#         fileLocation = findOwner(keyword,hash_list)
+#         if fileLocation == ip_port:
+#             print 'SAVING ' + str(fileName) + ' to ' + fileLocation + ' for ' + keyword
+#             data = lookup.get(fileName, [])
+#             data.append(keyword)
+#             lookup[fileName] = data
+#         else:
+#             fileLocations.append(fileLocation)
+#             perfectHit = False
+
+
+#     # talk to one person
+#     if len(keywords) == 1:
+#         files = getFileNamesForKeyword(fileLocations[0], keywords_list[0])
+
+
+#     for i in range(len(fileLocations)):
+#         payload = {'fileName': fileName, 'keywords':[keywords[i]]}
+#         print 'FORWARDING ' + str(payload) + ' to ' + 'http://'+fileLocations[i]+'/data'
+#         r = requests.put('http://'+fileLocations[i]+'/data', json = payload)        
+
+#     if perfectHit:
+#         j = jsonify(msg='success', owner=fileLocation, file=fileName, keywords = keywords )
+#         return (make_response(j,200,{'Content-Type':'application/json'}))                
+#     else:
+#         return (make_response(r.text,r.status_code,{'Content-Type':'application/json'}))  
+
+
+
+#     if len(keywords_list) == 1:
+#         return getFilesForKeyword(search_nodes[0], keywords_list[0])
+#     else:
+#         #     do something for first node
+#         #     do something different for all other nodes
+
+#         # given 2 keywords
+        
+#         # figure out host 1 has keyword 1
+
+#         # search_nodes[0]
+#         # given this guy
+
+#         #works for 2 keywords:
+
+#         # firstFilterObject = Bloomfilter('nodes/'+search_nodes[0]+'/'+'bloom_'+keywords_list[0]+'.txt')
+#         # print 'intersection between filter of '+keywords_list[0]+' and files on node '+search_nodes[1] 
+#         # print bloomObjANDFiles(firstFilterObject,getFilesonNode(search_nodes[1]))
+
+#         # retrieve bloom filter for first node
+#         filterObject = Bloomfilter('nodes/'+search_nodes[0]+'/'+'bloom_'+keywords_list[0]+'.txt')
+
+#         # EXPLICIT SEARCH NEEDS TO SEND THE ACTUAL FILE NAMES
+#         #send filter filter filter file names file names file names
+#         if searchType == 'explicit':
+#             for node in search_nodes[1:]:
+#                 # print 'intersection between filter of '+keywords_list[0]+' and files on node '+search_nodes[1] 
+                
+#                 # get a list of files for the current node that are in the filter
+#                 file_list = bloomObjANDFiles(filterObject,getFilesonNode(node))
+                
+#                 # print file_list
+
+#                 # create a new filter object is created for th new file names but this isnt really true
+#                 # the filter object isnt over written because it exists on the same system
+
+#                 filterObject = Bloomfilter('new_filter_temp.txt')
+#                 for file in file_list:
+#                     filterObject.addToFilter(file)
+#             return file_list
+
+
+#         # THROUGHPUT SEARCH NEEDS TO SEND THE NEWLY CREATED FILTERS
+#         # send filter filter filter filter then filenames once
+
+#         elif searchType == 'throughput':
+#             print 'to be implemented: throughput'
+
+#             for node in search_nodes[1:]:
+#                 # create a filter that in universal and used then finallly use that filter against the last node
+
+#                 # print 'intersection between filter of '+keywords_list[0]+' and files on node '+search_nodes[1] 
+                
+#                 # get a list of files for the current node that are in the filter
+#                 file_list = bloomObjANDFiles(filterObject,getFilesonNode(node))
+                
+#                 # print file_list
+
+#                 # create a new filter object is created for th new file names but this isnt really true
+#                 # the filter object isnt over written because it exists on the same system
+#                 # devlope a new ya to create a new filter object 
+#                 filterObject = Bloomfilter('new_filter_temp.txt')
+#                 for file in file_list:
+#                     filterObject.addToFilter(file)
+#             return file_list
+
+#         else:
+#             return 'ERROR: invalid search type.'
+
+#         # search host 2 given a bloom filter
+        
+#         # send the filter of the first keyword to host 2
+
+#         # host 2 sends host 1 the files that are associated with the filter sent. 
+#         # host 1 will send only interection of all of the files that are interection with itself
+
+#         # return 'too many keywords'
+
+
 # '''builds ip:hash(ip) dictionary'''
 # def make_ip_hash(hostlist):
 #     for host in hostlist:
 #         hostDictionary.update({str(host):hashIt(str(host))})        
-
-
-'''returns sorted list of tuples by hash(ip) values from host dictionary'''
-# def sortedDict():
-#     global hostDictionary
-#     sortedDictionary=sorted(hostDictionary.items(), key=operator.itemgetter(1))
-#     print 'hostDictionary sorted is :' + str(sortedDictionary)
-#     return sortedDictionary
-
-# '''returns desired host of given key'''
-# def findSuccessor(key, dictionaryThing):
-#     sortedDictionary=sortedDict()
-#     for ip, hashedIP in sortedDictionary: #want to go through dictionary values
-#         print 'loop iteration ' 
-#         if hashIt(str(key)) < hashedIP:   #comparing hash of the key's string to hashedIP
-#             print 'returned ip: '+ str(ip) + ", whose hash is " + str(hashedIP)
-#             return str(ip)
-#     print 'defaulted: '+str(sortedDictionary[0])
-#     return str(sortedDictionary[0][0]) #return the key of the first element in the sorted dictionary
 
 # '''test function: prints key and hash(key) and successor'''
 # def testValue(testKey):
@@ -163,6 +360,15 @@ def addFile(fileName,keywords,hash_list):
 #     print "Our key is " + str(testKey) + ", whose hash is " + str(hashedKey)
 #     print "The successor of this key is " + str(findSuccessor(testKey,hostDictionary))
 
+
+
+
+# @app.route('/internalSearch', methods=['GET', 'PUT','DELETE'])
+# def searchNoAPI():
+#     if request.method == 'PUT':
+#         jsonObj = request.get_json(silent=True)
+
+#     return 'here is the hashlist' + str(hash_list)
 
 @app.route('/')
 def hello_world():
@@ -177,7 +383,13 @@ def stuff():
     global hash_list
 
     if request.method == 'GET':
+        jsonObj = request.get_json(silent=True)
+        fileName= jsonObj.get('fileName', None)
+        keywords = jsonObj.get('keywords', None)
         return 'this get works'
+
+        search_keywords(query,hash_list,'explicit'):
+
 
     # print 'requests text'
     # print request.text
@@ -203,31 +415,6 @@ def stuff():
         # hash_list = makeHashList(hostlist)
         return addFile(fileName,keywords,hash_list)
 
-    # if request.method == 'GET':
-    #     key = request.form.get('key') 
-    #     keyOwner = findSuccessor(key, hostDictionary)
-
-    #     if keyOwner == ip_port:
-    #         if(key):
-    #             if( key in lookup):
-    #                 j = jsonify(msg= 'success', value= value, owner= keyOwner)
-    #                 return (make_response(j,200,{'Content-Type':'application/json'}))
-    #             else:
-    #                 j = jsonify(msg='error',error='key does not exist')
-    #                 return make_response(j,404,{'Content-Type':'application/json'})
-    #         else:
-    #             j = jsonify(msg='error',error='key does not exist')
-    #             return make_response(j,404,{'Content-Type':'application/json'})
-    #     else:
-    #         if request.method == 'GET':
-    #             key = request.args.get('key')
-    #             r = requests.get('http://'+str(keyOwner)+'/kvs?key='+str(key))
-    #             return r.text,r.status_code
-
-# '''Returns number of kvs in node'''
-# @app.route('/kvs/get_number_of_keys', methods=['GET'])
-# def numKeys():
-#     return jsonify(count=len(lookup)), 200
 
 # '''RECEIVE HOST LIST UPDATE TO REMOVE OR ADD A NODE TO LOCAL 'VIEW'''
 # @app.route('/kvs/update_hostlist', methods=['PUT'])
@@ -359,12 +546,7 @@ def throwup():
 
 
 if __name__ == "__main__":
-    #app.run(host=IP_ENV, port=PORT_ENV)
     app.run("0.0.0.0", port=8080)
-    # print 'started node'
-    # print 'hostlist: ' +str(hostlist)
-    # print 'hostDictionary: ' + str(hostDictionary)
-    # testValue('10.0.0.4:8080') 
 
 
    
