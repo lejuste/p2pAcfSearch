@@ -6,6 +6,7 @@ import sys
 import operator
 import hashlib
 from bloom_modified import Bloomfilter
+import time
 
 app = Flask(__name__)
 
@@ -19,15 +20,20 @@ num_keywords = os.environ.get('num_keywords')
 MAXSIZE = 3000 #note not all nodes will be created because of repeated values due to psuedorandom random function
 bloomDict = dict()
 
+lastBloomCheck = False
 
 # ----------------------------- HELPER FUNCTIONS --------------------------------------------------
 def hashIt(input1):
     # return abs(hash(str(input1))%MAXSIZE)
     # dont do an int to eliminate 
+    # return(abs(int(hashlib.sha224(input1).hexdigest(),16)))
     return(abs(int(hashlib.sha224(input1).hexdigest(),16))%MAXSIZE)
     # return abs(hash(str(hash(str(input)))))
 
+# INPUT: keyword - keyword for file
+# OUTPUT: boolean whether to create a new file or not to
 
+# Creates a list of node addresses with corresponding hashes
 def bloomItemExists(keyword):
     global bloomDict
     for item in bloomDict:
@@ -38,23 +44,30 @@ def bloomItemExists(keyword):
 def bloomItemAdd(keyword,fileName):
     global bloomDict
 
-
-
-
-
-
-
+    # if bloom item exists, print
     if(bloomItemExists(keyword)):
-        keyBloom = lookup.get(keyword, [])
+        keyBloom = bloomDict.get(keyword, [])
         keyBloom.addToFilter(fileName)
-
-
+    else:
+        new_keyword_filter = Bloomfilter(keyword)
+        new_keyword_filter.addToFilter(fileName)
+        bloomDict[keyword] = new_keyword_filter
 
 def bloomItemCheck(keyword):
+    if(bloomItemExists(keyword)):
+        theFilter = bloomDict.get(keyword, [])
+        print 'results:'
+        print theFilter.checkFilter(keyword)
+        print 'end of results'
+        return theFilter.checkFilter(keyword)
+    else:
+        return 0
 
+def getKeywordFilter(keyword):
+    return bloomDict.get(keyword, 0)
 
-
-def bloomItemIntersection():
+def bloomItemIntersection(filter1,filter2):
+    return filter1 & filter2
 
 
 # ----------------------------- DIRECTORY FOR ROUTING ---------------------------------------------
@@ -131,6 +144,7 @@ def addFile(fileName,keywords,hash_list):
             data = lookup.get(fileName, [])
             data.append(keyword)
             lookup[fileName] = data
+            bloomItemAdd(keyword,fileName)
         else:
             fileLocations.append(fileLocation)
             perfectHit = False
@@ -171,196 +185,71 @@ def getFileNamesForKeyword(keyword):
     return list(set(files))
 
 
-# def search_keywords(keywords,hash_list,searchType):
-#     print 'keywords'
-#     print keywords
-#     print 'hash_list'
-#     print hash_list
-
-#     if len(keywords) == 0:
-#         j = jsonify(msg='no keywords', files=[], keywords = keywords)
-#         return (make_response(j,200,{'Content-Type':'application/json'}))  
-
-
-#     get the filter for each file
-
-
-
-
-
-#     create a list of the hosts for each hostlist
-#         if only one place, check the bloom filter for the associated word
-#         and return files assocoated
-#         get the file with the assocoated keyword
-
-
-#         figure out if you own this request:
-
-
-#         if not:
-#             forward request to person with first keyword to /internalsearchrequest
-
-
-
-
-#             get bloom filter for first keyword
-
-
-#     return the files to the original node (needs to keep the original request ip_port)
-
-#     create and forward the remaining keywords.    
-#     either way you need to forward the keywords for search_nodes
-
-
-#     base off of remaining keywords
-
-
-
-
-#     total latency???
-
-
-
-#     calculate totoal latency from the first touched node?
-
-
-
-#     explicit return throught http requests
-
-
-#     touched node -> keyword 1 node -> keyword 2 node -> keyword 1 node -> touched node 
-
-
-
-
-
-
-
-
-#     #find a list of nodes with following keywords
-#     fileLocations = []
-#     for keyword in keywords:
-#         fileLocation = findOwner(keyword,hash_list)
-#         if fileLocation == ip_port:
-#             print 'SAVING ' + str(fileName) + ' to ' + fileLocation + ' for ' + keyword
-#             data = lookup.get(fileName, [])
-#             data.append(keyword)
-#             lookup[fileName] = data
-#         else:
-#             fileLocations.append(fileLocation)
-#             perfectHit = False
-
-
-#     # talk to one person
-#     if len(keywords) == 1:
-#         files = getFileNamesForKeyword(fileLocations[0], keywords_list[0])
-
-
-#     for i in range(len(fileLocations)):
-#         payload = {'fileName': fileName, 'keywords':[keywords[i]]}
-#         print 'FORWARDING ' + str(payload) + ' to ' + 'http://'+fileLocations[i]+'/data'
-#         r = requests.put('http://'+fileLocations[i]+'/data', json = payload)        
-
-#     if perfectHit:
-#         j = jsonify(msg='success', owner=fileLocation, file=fileName, keywords = keywords )
-#         return (make_response(j,200,{'Content-Type':'application/json'}))                
-#     else:
-#         return (make_response(r.text,r.status_code,{'Content-Type':'application/json'}))  
-
-
-
-#     if len(keywords_list) == 1:
-#         return getFilesForKeyword(search_nodes[0], keywords_list[0])
-#     else:
-#         #     do something for first node
-#         #     do something different for all other nodes
-
-#         # given 2 keywords
-        
-#         # figure out host 1 has keyword 1
-
-#         # search_nodes[0]
-#         # given this guy
-
-#         #works for 2 keywords:
-
-#         # firstFilterObject = Bloomfilter('nodes/'+search_nodes[0]+'/'+'bloom_'+keywords_list[0]+'.txt')
-#         # print 'intersection between filter of '+keywords_list[0]+' and files on node '+search_nodes[1] 
-#         # print bloomObjANDFiles(firstFilterObject,getFilesonNode(search_nodes[1]))
-
-#         # retrieve bloom filter for first node
-#         filterObject = Bloomfilter('nodes/'+search_nodes[0]+'/'+'bloom_'+keywords_list[0]+'.txt')
-
-#         # EXPLICIT SEARCH NEEDS TO SEND THE ACTUAL FILE NAMES
-#         #send filter filter filter file names file names file names
-#         if searchType == 'explicit':
-#             for node in search_nodes[1:]:
-#                 # print 'intersection between filter of '+keywords_list[0]+' and files on node '+search_nodes[1] 
-                
-#                 # get a list of files for the current node that are in the filter
-#                 file_list = bloomObjANDFiles(filterObject,getFilesonNode(node))
-                
-#                 # print file_list
-
-#                 # create a new filter object is created for th new file names but this isnt really true
-#                 # the filter object isnt over written because it exists on the same system
-
-#                 filterObject = Bloomfilter('new_filter_temp.txt')
-#                 for file in file_list:
-#                     filterObject.addToFilter(file)
-#             return file_list
-
-
-#         # THROUGHPUT SEARCH NEEDS TO SEND THE NEWLY CREATED FILTERS
-#         # send filter filter filter filter then filenames once
-
-#         elif searchType == 'throughput':
-#             print 'to be implemented: throughput'
-
-#             for node in search_nodes[1:]:
-#                 # create a filter that in universal and used then finallly use that filter against the last node
-
-#                 # print 'intersection between filter of '+keywords_list[0]+' and files on node '+search_nodes[1] 
-                
-#                 # get a list of files for the current node that are in the filter
-#                 file_list = bloomObjANDFiles(filterObject,getFilesonNode(node))
-                
-#                 # print file_list
-
-#                 # create a new filter object is created for th new file names but this isnt really true
-#                 # the filter object isnt over written because it exists on the same system
-#                 # devlope a new ya to create a new filter object 
-#                 filterObject = Bloomfilter('new_filter_temp.txt')
-#                 for file in file_list:
-#                     filterObject.addToFilter(file)
-#             return file_list
-
-#         else:
-#             return 'ERROR: invalid search type.'
-
-#         # search host 2 given a bloom filter
-        
-#         # send the filter of the first keyword to host 2
-
-#         # host 2 sends host 1 the files that are associated with the filter sent. 
-#         # host 1 will send only interection of all of the files that are interection with itself
-
-#         # return 'too many keywords'
-
-
-# '''builds ip:hash(ip) dictionary'''
-# def make_ip_hash(hostlist):
-#     for host in hostlist:
-#         hostDictionary.update({str(host):hashIt(str(host))})        
-
-# '''test function: prints key and hash(key) and successor'''
-# def testValue(testKey):
-#     print "___________________________________________________________________________"
-#     hashedKey=hashIt(str(testKey)) #hashes the STRING of the key    
-#     print "Our key is " + str(testKey) + ", whose hash is " + str(hashedKey)
-#     print "The successor of this key is " + str(findSuccessor(testKey,hostDictionary))
-
-
+def search_keywords(keywords,hash_list,searchType):
+    print 'keywords'
+    print keywords
+    print 'hash_list'
+    print hash_list
+
+    if len(keywords) == 0:
+        j = jsonify(msg='no keywords', files=[], keywords = keywords)
+        return (make_response(j,200,{'Content-Type':'application/json'}))  
+
+    # THROUGHPUT SEARCH NEEDS TO SEND THE NEWLY CREATED FILTERS
+    # send filter filter filter filter then filenames once
+
+    # must forward: startTime(),remaining keywords,currentFilter
+
+    startTime = time.time()
+    print 'start time: ' + startTime
+    nodeFilter = 0
+    remainingKeywords = []
+
+
+    for keyword in keywords:
+ 
+        fileLocation = findOwner(keyword,hash_list)
+        if fileLocation == ip_port:
+            filterObject = getKeywordFilter(keyword)
+            bitVector = filterObject.getBitVector()
+
+            j = jsonify(msg='success', keywordFound = keyword, bitVector=bitVector)
+            return (make_response(j,200,{'Content-Type':'application/json'}))    
+            # get filter for the word and start building the filter
+        else:
+            remainingKeywords.append(keyword)
+
+        j = jsonify(msg='success', keywordNotFound = str(remainingKeywords))
+        return (make_response(j,200,{'Content-Type':'application/json'}))  
+
+    # if(len(remainingKeywords) > 1):
+    #     nextNode = findOwner(remainingKeywords[0],hash_list)
+    #     # create filter
+    #     #forward to a node
+
+    #     # wait for response
+    #     # return response!!!
+    # else:
+    #     totalTime = time.time() - startTime
+
+    #     # get fileNames on local node that are associated with the filter fileNames[]
+
+
+    #     j = jsonify(msg='success', totalTime = totalTime, files=fileNames,)
+    #     return (make_response(j,200,{'Content-Type':'application/json'}))     
+
+
+'''builds ip:hash(ip) dictionary'''
+def make_ip_hash(hostlist):
+    for host in hostlist:
+        hostDictionary.update({str(host):hashIt(str(host))})        
+
+'''test function: prints key and hash(key) and successor'''
+def testValue(testKey):
+    print "___________________________________________________________________________"
+    hashedKey=hashIt(str(testKey)) #hashes the STRING of the key    
+    print "Our key is " + str(testKey) + ", whose hash is " + str(hashedKey)
+    print "The successor of this key is " + str(findSuccessor(testKey,hostDictionary))
 
 
 # @app.route('/internalSearch', methods=['GET', 'PUT','DELETE'])
@@ -374,21 +263,54 @@ def getFileNamesForKeyword(keyword):
 def hello_world():
     return 'here is the hashlist' + str(hash_list)
 
+
+
+
+@app.route('/search', methods=['GET', 'PUT','DELETE'])
+def searchMethod():
+    global lookup
+    global hostDictionary
+    global hostList
+    global hash_list
+
+    if request.method == 'PUT':
+        jsonObj = request.get_json(silent=True)
+        keywords = jsonObj.get('keywords', None)
+
+        if keywords == None:
+            j = jsonify(replaced=0, msg='fail', test="keys undefined")
+            return (make_response(j,200,{'Content-Type':'application/json'}))
+    
+        j = jsonify(replaced=0, msg='keywords valid', keywords=str(keywords))
+        return (make_response(j,200,{'Content-Type':'application/json'}))
+
+
+        return search_keywords(query,hash_list,'explicit')
+
+
+
+
 '''key-value GET, PUT, and DELETE Requests'''
-@app.route('/data', methods=['GET', 'PUT','DELETE'])
+@app.route('/data', methods=['GET', 'PUT','POST','DELETE'])
 def stuff():
     global lookup
     global hostDictionary
     global hostList
     global hash_list
 
-    if request.method == 'GET':
-        jsonObj = request.get_json(silent=True)
-        fileName= jsonObj.get('fileName', None)
-        keywords = jsonObj.get('keywords', None)
-        return 'this get works'
+    # if request.method == 'POST':
+    #     jsonObj = request.get_json(silent=True)
+    #     keywords = jsonObj.get('keywords', None)
 
-        search_keywords(query,hash_list,'explicit'):
+    #     if keywords == None:
+    #         j = jsonify(replaced=0, msg='fail', test="keys undefined")
+    #         return (make_response(j,200,{'Content-Type':'application/json'}))
+    
+    #     j = jsonify(replaced=0, msg='keywords valid', keywords=str(keywords))
+    #     return (make_response(j,200,{'Content-Type':'application/json'}))
+
+
+    #     return search_keywords(query,hash_list,'explicit')
 
 
     # print 'requests text'
@@ -403,7 +325,7 @@ def stuff():
         keywords = jsonObj.get('keywords', None)
 
         if fileName == None or keywords == None:
-            j = jsonify(replaced=0, msg='fail', test="key or value undefined", file=keywords)
+            j = jsonify(replaced=0, msg='fail', test="filename or keywords undefined")
             return (make_response(j,200,{'Content-Type':'application/json'}))
         # update hash list!
         # print 'valid put request'
@@ -538,11 +460,23 @@ def stuff():
 #                 return (make_response(j,200,{'Content-Type':'application/json'}))     
 
 #debugging code --------------------------------------
+
+def printBloomDicts(bloom_dict):
+    dictString = ''
+    for key in bloom_dict.keys():
+        dictString = dictString +  + key + "\n" + str(bloom_dict.get(key,'None'))
+    return dictString
+
+
 @app.route('/throwup', methods=['GET'])
 def throwup():
     if request.method == 'GET': 
-        return jsonify(count=len(lookup),lookup= lookup)# hostlist=hostlist, successor= findSuccessor(ip_port, hostDictionary), lookup=lookup, hash=hashIt(ip_port), ip_port=str(ip_port), hostDictionary=hostDictionary)
+        return jsonify(count=len(lookup),lookup=lookup,bloomDict=bloomDict.keys())
+        return jsonify(count=len(lookup),lookup=lookup,bloomDict=bloomDict.keys(),bloomPrint=printBloomDicts(bloomDict))# hostlist=hostlist, successor= findSuccessor(ip_port, hostDictionary), lookup=lookup, hash=hashIt(ip_port), ip_port=str(ip_port), hostDictionary=hostDictionary)
 #----------------------------------------------------
+
+
+
 
 
 if __name__ == "__main__":
