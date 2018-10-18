@@ -6,6 +6,8 @@ import sys
 import operator
 import hashlib
 from bloom_modified import Bloomfilter
+from bloom_modified import BitVector
+
 import time
 
 app = Flask(__name__)
@@ -201,26 +203,41 @@ def search_keywords(keywords,hash_list,searchType):
     # must forward: startTime(),remaining keywords,currentFilter
 
     startTime = time.time()
-    print 'start time: ' + startTime
-    nodeFilter = 0
-    remainingKeywords = []
+    # print 'start time: ' + str(startTime)
+    nodeFilter = BitVector()
 
+    remainingKeywords = []
+    foundKeywords = []
 
     for keyword in keywords:
  
         fileLocation = findOwner(keyword,hash_list)
         if fileLocation == ip_port:
             filterObject = getKeywordFilter(keyword)
-            bitVector = filterObject.getBitVector()
-
-            j = jsonify(msg='success', keywordFound = keyword, bitVector=bitVector)
-            return (make_response(j,200,{'Content-Type':'application/json'}))    
+            keyVector = filterObject.getBitVector()
+            foundKeywords.append(keyword)
+            nodeFilter.bitwiseOr(keyVector)
+            print 'key vector'
+            print keyVector
+            print 'nodeFilter'
+            print nodeFilter
+            # j = jsonify(msg='success', keywordFound = keyword, bitVector=keyVector)
+            # return (make_response(j,200,{'Content-Type':'application/json'}))    
             # get filter for the word and start building the filter
         else:
             remainingKeywords.append(keyword)
 
-        j = jsonify(msg='success', keywordNotFound = str(remainingKeywords))
-        return (make_response(j,200,{'Content-Type':'application/json'}))  
+
+
+    j = jsonify(msg='success', keywords = str(foundKeywords), keywordOrFilter = str(nodeFilter))
+    return (make_response(j,200,{'Content-Type':'application/json'}))  
+
+
+
+    # payload = {'fileName': fileName, 'keywords':[keywords[i]]}
+    # print 'FORWARDING ' + str(payload) + ' to ' + 'http://'+fileLocations[i]+'/data'
+    # r = requests.put('http://'+fileLocations[i]+'/data', json = payload)        
+
 
     # if(len(remainingKeywords) > 1):
     #     nextNode = findOwner(remainingKeywords[0],hash_list)
@@ -266,7 +283,7 @@ def hello_world():
 
 
 
-@app.route('/search', methods=['GET', 'PUT','DELETE'])
+@app.route('/search', methods=['GET','PUT','DELETE'])
 def searchMethod():
     global lookup
     global hostDictionary
@@ -278,16 +295,9 @@ def searchMethod():
         keywords = jsonObj.get('keywords', None)
 
         if keywords == None:
-            j = jsonify(replaced=0, msg='fail', test="keys undefined")
+            j = jsonify(msg='fail', test="keys undefined")
             return (make_response(j,200,{'Content-Type':'application/json'}))
-    
-        j = jsonify(replaced=0, msg='keywords valid', keywords=str(keywords))
-        return (make_response(j,200,{'Content-Type':'application/json'}))
-
-
-        return search_keywords(query,hash_list,'explicit')
-
-
+        return search_keywords(keywords,hash_list,'explicit')
 
 
 '''key-value GET, PUT, and DELETE Requests'''
@@ -297,27 +307,6 @@ def stuff():
     global hostDictionary
     global hostList
     global hash_list
-
-    # if request.method == 'POST':
-    #     jsonObj = request.get_json(silent=True)
-    #     keywords = jsonObj.get('keywords', None)
-
-    #     if keywords == None:
-    #         j = jsonify(replaced=0, msg='fail', test="keys undefined")
-    #         return (make_response(j,200,{'Content-Type':'application/json'}))
-    
-    #     j = jsonify(replaced=0, msg='keywords valid', keywords=str(keywords))
-    #     return (make_response(j,200,{'Content-Type':'application/json'}))
-
-
-    #     return search_keywords(query,hash_list,'explicit')
-
-
-    # print 'requests text'
-    # print request.text
-    # print 'json'
-    # print request.json()
-
 
     if request.method == 'PUT':
         jsonObj = request.get_json(silent=True)
