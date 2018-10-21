@@ -207,53 +207,37 @@ def search_keywords(keywords,hash_list,searchType):
     nodeFilter = BitVector()
 
     remainingKeywords = []
-    foundKeywords = []
+    # foundKeywords = []
 
     for keyword in keywords:
  
         fileLocation = findOwner(keyword,hash_list)
         if fileLocation == ip_port:
+            print 'found: ' + keyword
             filterObject = getKeywordFilter(keyword)
             keyVector = filterObject.getBitVector()
-            foundKeywords.append(keyword)
+            # foundKeywords.append(keyword)
             nodeFilter.bitwiseOr(keyVector)
-            print 'key vector'
-            print keyVector
-            print 'nodeFilter'
-            print nodeFilter
-            # j = jsonify(msg='success', keywordFound = keyword, bitVector=keyVector)
-            # return (make_response(j,200,{'Content-Type':'application/json'}))    
-            # get filter for the word and start building the filter
         else:
             remainingKeywords.append(keyword)
 
+    print remainingKeywords
+    if(len(remainingKeywords) > 0):
+        print 'finding next node'
+        nextNode = findOwner(remainingKeywords[0],hash_list)
+        print nextNode
+        payload = {'startTime': startTime, 'keywords': remainingKeywords, 'currentFilter':nodeFilter.vector}
+        print 'FORWARDING ' + str(payload) + ' to ' + 'http://'+nextNode+'/internalSearch'
+        r = requests.put('http://'+nextNode+'/internalSearch', json = payload)        
 
+        # wait for response
+        # return response!!!
+    
 
-    j = jsonify(msg='success', keywords = str(foundKeywords), keywordOrFilter = str(nodeFilter))
+    totalTime = time.time() - startTime
+
+    j = jsonify(msg='success', fileNames = 'nonern')
     return (make_response(j,200,{'Content-Type':'application/json'}))  
-
-
-
-    # payload = {'fileName': fileName, 'keywords':[keywords[i]]}
-    # print 'FORWARDING ' + str(payload) + ' to ' + 'http://'+fileLocations[i]+'/data'
-    # r = requests.put('http://'+fileLocations[i]+'/data', json = payload)        
-
-
-    # if(len(remainingKeywords) > 1):
-    #     nextNode = findOwner(remainingKeywords[0],hash_list)
-    #     # create filter
-    #     #forward to a node
-
-    #     # wait for response
-    #     # return response!!!
-    # else:
-    #     totalTime = time.time() - startTime
-
-    #     # get fileNames on local node that are associated with the filter fileNames[]
-
-
-    #     j = jsonify(msg='success', totalTime = totalTime, files=fileNames,)
-    #     return (make_response(j,200,{'Content-Type':'application/json'}))     
 
 
 '''builds ip:hash(ip) dictionary'''
@@ -269,12 +253,13 @@ def testValue(testKey):
     print "The successor of this key is " + str(findSuccessor(testKey,hostDictionary))
 
 
-# @app.route('/internalSearch', methods=['GET', 'PUT','DELETE'])
-# def searchNoAPI():
-#     if request.method == 'PUT':
-#         jsonObj = request.get_json(silent=True)
-
-#     return 'here is the hashlist' + str(hash_list)
+@app.route('/internalSearch', methods=['GET','PUT','DELETE'])
+def searching():
+    if request.method == 'PUT':
+        jsonObj = request.get_json(silent=True)
+        print jsonObj
+        j = jsonify(msg='success')
+        return (make_response(j,200,{'Content-Type':'application/json'}))  
 
 @app.route('/')
 def hello_world():
