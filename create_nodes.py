@@ -238,7 +238,7 @@ def bloomObjANDFiles(bloomObj,fileNames):
 #--------------------------------------------------------data setup---------------------------------------------------------------
 
 #--------------------------------------------------------bloom search---------------------------------------------------------------
-def search_keywords(query,hash_list,searchType):
+def search_keywordss(query,hash_list,searchType):
     keywords_list = query.strip(' ').split(" ")
     print keywords_list   
 
@@ -432,7 +432,7 @@ def main():
     while(1):
         keywords = raw_input("Which keywords are you looking for associated with files?")
         
-        queryResults = search_keywords(keywords,hash_list,'explicit')
+        queryResults = search_keywordss(keywords,hash_list,'explicit')
 
         print '\n Here r ur files dood:\n'
         print queryResults

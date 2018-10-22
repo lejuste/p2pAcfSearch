@@ -186,60 +186,6 @@ def getFileNamesForKeyword(keyword):
                 files.append(fileName)
     return list(set(files))
 
-
-def search_keywords(keywords,hash_list,searchType):
-    print 'keywords'
-    print keywords
-    print 'hash_list'
-    print hash_list
-
-    if len(keywords) == 0:
-        j = jsonify(msg='no keywords', files=[], keywords = keywords)
-        return (make_response(j,200,{'Content-Type':'application/json'}))  
-
-    # THROUGHPUT SEARCH NEEDS TO SEND THE NEWLY CREATED FILTERS
-    # send filter filter filter filter then filenames once
-
-    # must forward: startTime(),remaining keywords,currentFilter
-
-    startTime = time.time()
-    # print 'start time: ' + str(startTime)
-    nodeFilter = BitVector()
-
-    remainingKeywords = []
-    # foundKeywords = []
-
-    for keyword in keywords:
- 
-        fileLocation = findOwner(keyword,hash_list)
-        if fileLocation == ip_port:
-            print 'found: ' + keyword
-            filterObject = getKeywordFilter(keyword)
-            keyVector = filterObject.getBitVector()
-            # foundKeywords.append(keyword)
-            nodeFilter.bitwiseOr(keyVector)
-        else:
-            remainingKeywords.append(keyword)
-
-    print remainingKeywords
-    if(len(remainingKeywords) > 0):
-        print 'finding next node'
-        nextNode = findOwner(remainingKeywords[0],hash_list)
-        print nextNode
-        payload = {'startTime': startTime, 'keywords': remainingKeywords, 'currentFilter':nodeFilter.vector}
-        print 'FORWARDING ' + str(payload) + ' to ' + 'http://'+nextNode+'/internalSearch'
-        r = requests.put('http://'+nextNode+'/internalSearch', json = payload)        
-
-        # wait for response
-        # return response!!!
-    
-
-    totalTime = time.time() - startTime
-
-    j = jsonify(msg='success', fileNames = 'nonern')
-    return (make_response(j,200,{'Content-Type':'application/json'}))  
-
-
 '''builds ip:hash(ip) dictionary'''
 def make_ip_hash(hostlist):
     for host in hostlist:
@@ -252,13 +198,107 @@ def testValue(testKey):
     print "Our key is " + str(testKey) + ", whose hash is " + str(hashedKey)
     print "The successor of this key is " + str(findSuccessor(testKey,hostDictionary))
 
+def search_keywords(keywords,hash_list,searchType):
+    print 'keywords'
+    print keywords
+    print 'hash_list'
+    print hash_list
 
-@app.route('/internalSearch', methods=['GET','PUT','DELETE'])
-def searching():
-    if request.method == 'PUT':
-        jsonObj = request.get_json(silent=True)
-        print jsonObj
-        j = jsonify(msg='success')
+    # if len(keywords) == 0:
+    #     j = jsonify(msg='no keywords', files=[], keywords = keywords)
+    #     return (make_response(j,200,{'Content-Type':'application/json'}))  
+
+    # THROUGHPUT SEARCH NEEDS TO SEND THE NEWLY CREATED FILTERS
+    # send filter filter filter filter then filenames once
+    # must forward: startTime(),remaining keywords,currentFilter
+    startTime = time.time()
+    # print 'start time: ' + str(startTime)
+    nodeFilter = BitVector()
+    remainingKeywords = []
+
+    for keyword in keywords:
+ 
+        fileLocation = findOwner(keyword,hash_list)
+        if fileLocation == ip_port:
+            print 'found: ' + keyword
+            filterObject = getKeywordFilter(keyword)
+            keyVector = filterObject.getBitVector()
+            nodeFilter.bitwiseOr(keyVector)
+        else:
+            remainingKeywords.append(keyword)
+
+    print remainingKeywords
+    if(len(remainingKeywords) > 0):
+        print 'finding next node'
+        nextNode = findOwner(remainingKeywords[0],hash_list)
+        print nextNode
+        payload = {'startTime': startTime, 'keywords': remainingKeywords, 'currentFilter':nodeFilter.vector}
+        print 'FORWARDING ' + str(payload) + ' to ' + 'http://'+nextNode+'/search'
+        r = requests.put('http://'+nextNode+'/search', json = payload)        
+
+    
+    # j = jsonify(msg='success', json=r.json())
+    print 'printing text from search:'
+    print r.text
+    print '....'
+    return (make_response(r.text,r.status_code,{'Content-Type':'application/json'}))  
+    # totalTime = time.time() - startTime
+
+    # j = jsonify(msg='success', fileNames = 'nonern')
+    # return (make_response(j,200,{'Content-Type':'application/json'}))  
+
+
+
+
+# @app.route('/internalSearch', methods=['GET','PUT','DELETE'])
+def  interal_search_keywords(startTime,keywords,currentFilter):
+    print '............................ in internal .................................'
+    print startTime
+    print keywords
+    print currentFilter
+
+    global hash_list
+    global lookup
+    # THROUGHPUT SEARCH NEEDS TO SEND THE NEWLY CREATED FILTERS
+    # send filter filter filter filter then filenames once
+    # must forward: startTime(),remaining keywords,currentFilter
+    startTime = time.time()
+    # print 'start time: ' + str(startTime)
+    nodeFilter = BitVector()
+    nodeFilter.rebuildVector(currentFilter)
+    remainingKeywords = []
+    print nodeFilter
+    for keyword in keywords:
+ 
+        fileLocation = findOwner(keyword,hash_list)
+        if fileLocation == ip_port:
+            print 'found: ' + keyword
+            filterObject = getKeywordFilter(keyword)
+            keyVector = filterObject.getBitVector()
+            nodeFilter.bitwiseOr(keyVector)
+        else:
+            remainingKeywords.append(keyword)
+
+    print remainingKeywords
+    if(len(remainingKeywords) > 0):
+        print 'finding next node'
+        nextNode = findOwner(remainingKeywords[0],hash_list)
+        print nextNode
+        payload = {'startTime': startTime, 'keywords': remainingKeywords, 'currentFilter':nodeFilter.vector}
+        print 'FORWARDING ' + str(payload) + ' to ' + 'http://'+nextNode+'/search'
+        r = requests.put('http://'+nextNode+'/search', json = payload)        
+
+    else:
+        # return the keywords and the current time!!!!!
+        finalFilter = Bloomfilter()
+        finalFilter.filterUpdate(nodeFilter.vector)
+        results = []
+        for file in lookup:
+            if finalFilter.checkFilter(file):
+                results.append(file)
+
+        currtime = time.time()
+        j = jsonify(msg='success',finalTime = currtime, results = results)
         return (make_response(j,200,{'Content-Type':'application/json'}))  
 
 @app.route('/')
@@ -278,12 +318,18 @@ def searchMethod():
     if request.method == 'PUT':
         jsonObj = request.get_json(silent=True)
         keywords = jsonObj.get('keywords', None)
+        startTime = jsonObj.get('startTime', None)
 
-        if keywords == None:
+        if keywords == None: # return failed search
             j = jsonify(msg='fail', test="keys undefined")
             return (make_response(j,200,{'Content-Type':'application/json'}))
-        return search_keywords(keywords,hash_list,'explicit')
-
+        if startTime == None: # start a search
+            print 'received first search'
+            return search_keywords(keywords,hash_list,'explicit')
+        else: # internal searches that are part of process
+            currentFilter = jsonObj.get('currentFilter', None)
+            print 'in else'
+            return interal_search_keywords(startTime,keywords,currentFilter)
 
 '''key-value GET, PUT, and DELETE Requests'''
 @app.route('/data', methods=['GET', 'PUT','POST','DELETE'])
