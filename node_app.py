@@ -8,6 +8,8 @@ import hashlib
 from bloom_modified import Bloomfilter
 from bloom_modified import BitVector
 
+import json
+
 import time
 
 app = Flask(__name__)
@@ -222,8 +224,9 @@ def search_keywords(keywords,hash_list,searchType):
         if fileLocation == ip_port:
             print 'found: ' + keyword
             filterObject = getKeywordFilter(keyword)
-            keyVector = filterObject.getBitVector()
-            nodeFilter.bitwiseOr(keyVector)
+            if(filterObject):
+                keyVector = filterObject.getBitVector()
+                nodeFilter.bitwiseOr(keyVector)
         else:
             remainingKeywords.append(keyword)
 
@@ -236,22 +239,37 @@ def search_keywords(keywords,hash_list,searchType):
         print 'FORWARDING ' + str(payload) + ' to ' + 'http://'+nextNode+'/search'
         r = requests.put('http://'+nextNode+'/search', json = payload)        
 
-    
+        print getJsonAttribute(r.text,'final time')
+        return (make_response(r.text,r.status_code,{'Content-Type':'application/json'}))  
     # j = jsonify(msg='success', json=r.json())
-    print 'printing text from search:'
-    print r.text
-    print '....'
-    return (make_response(r.text,r.status_code,{'Content-Type':'application/json'}))  
-    # totalTime = time.time() - startTime
+    else:
 
-    # j = jsonify(msg='success', fileNames = 'nonern')
-    # return (make_response(j,200,{'Content-Type':'application/json'}))  
+        print 'all files are local'
+        # # jsonResponse = r.text
+        # # d = json.loads(jsonResponse)
+        # # print 'final time'
+        # # print d.get('finalTime', 'lololol')
+        # # # print '....'
+        # # j = jsonify(msg='success',finalTime = ti, results = results)
+        # # return (make_response(j,200,{'Content-Type':'application/json'}))  
+        # for file in lookup:
+        #     if finalFilter.checkFilter(file):
+        #         results.append(file)
 
+        # totalTime = time.time() - startTime
+
+        # j = jsonify(msg='success', finalTime = totalTime, fileNames = 'nonern')
+        # return (make_response(j,200,{'Content-Type':'application/json'})) 
+        return internal_search_keywords(startTime,keywords) 
+
+def getJsonAttribute(text,field):
+    d = json.loads(text)
+    return d.get(field,None)
 
 
 
 # @app.route('/internalSearch', methods=['GET','PUT','DELETE'])
-def  interal_search_keywords(startTime,keywords,currentFilter):
+def  internal_search_keywords(startTime,keywords,currentFilter = None):
     print '............................ in internal .................................'
     print startTime
     print keywords
@@ -262,10 +280,11 @@ def  interal_search_keywords(startTime,keywords,currentFilter):
     # THROUGHPUT SEARCH NEEDS TO SEND THE NEWLY CREATED FILTERS
     # send filter filter filter filter then filenames once
     # must forward: startTime(),remaining keywords,currentFilter
-    startTime = time.time()
+    # startTime = time.time()
     # print 'start time: ' + str(startTime)
     nodeFilter = BitVector()
-    nodeFilter.rebuildVector(currentFilter)
+    if currentFilter != None:
+        nodeFilter.rebuildVector(currentFilter)
     remainingKeywords = []
     print nodeFilter
     for keyword in keywords:
@@ -274,8 +293,9 @@ def  interal_search_keywords(startTime,keywords,currentFilter):
         if fileLocation == ip_port:
             print 'found: ' + keyword
             filterObject = getKeywordFilter(keyword)
-            keyVector = filterObject.getBitVector()
-            nodeFilter.bitwiseOr(keyVector)
+            if(filterObject):
+                keyVector = filterObject.getBitVector()
+                nodeFilter.bitwiseOr(keyVector)
         else:
             remainingKeywords.append(keyword)
 
@@ -297,8 +317,8 @@ def  interal_search_keywords(startTime,keywords,currentFilter):
             if finalFilter.checkFilter(file):
                 results.append(file)
 
-        currtime = time.time()
-        j = jsonify(msg='success',finalTime = currtime, results = results)
+        totalTime = time.time() - startTime
+        j = jsonify(msg='success',finalTime = totalTime, results = results)
         return (make_response(j,200,{'Content-Type':'application/json'}))  
 
 @app.route('/')
@@ -329,7 +349,7 @@ def searchMethod():
         else: # internal searches that are part of process
             currentFilter = jsonObj.get('currentFilter', None)
             print 'in else'
-            return interal_search_keywords(startTime,keywords,currentFilter)
+            return internal_search_keywords(startTime,keywords,currentFilter)
 
 '''key-value GET, PUT, and DELETE Requests'''
 @app.route('/data', methods=['GET', 'PUT','POST','DELETE'])
@@ -492,7 +512,7 @@ def printBloomDicts(bloom_dict):
 def throwup():
     if request.method == 'GET': 
         return jsonify(count=len(lookup),lookup=lookup,bloomDict=bloomDict.keys())
-        return jsonify(count=len(lookup),lookup=lookup,bloomDict=bloomDict.keys(),bloomPrint=printBloomDicts(bloomDict))# hostlist=hostlist, successor= findSuccessor(ip_port, hostDictionary), lookup=lookup, hash=hashIt(ip_port), ip_port=str(ip_port), hostDictionary=hostDictionary)
+        # return jsonify(count=len(lookup),lookup=lookup,bloomDict=bloomDict.keys(),bloomPrint=printBloomDicts(bloomDict))# hostlist=hostlist, successor= findSuccessor(ip_port, hostDictionary), lookup=lookup, hash=hashIt(ip_port), ip_port=str(ip_port), hostDictionary=hostDictionary)
 #----------------------------------------------------
 
 
