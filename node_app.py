@@ -19,6 +19,7 @@ IP_ENV = os.environ.get('ip')      #.get() is a safe way to get values from a di
 VIEW = os.environ.get('VIEW')
 ip_port = os.environ.get('ip_port')
 num_keywords = os.environ.get('num_keywords')
+randomId = os.environ.get('randomId')
 
 
 MAXSIZE = 3000 #note not all nodes will be created because of repeated values due to psuedorandom random function
@@ -31,7 +32,12 @@ def hashIt(input1):
     # return abs(hash(str(input1))%MAXSIZE)
     # dont do an int to eliminate 
     # return(abs(int(hashlib.sha224(input1).hexdigest(),16)))
-    return(abs(int(hashlib.sha224(input1).hexdigest(),16))%MAXSIZE)
+    # print 'hash it'
+    # print hashlib.sha224(input1).hexdigest()
+    # print abs(int(hashlib.sha224(input1).hexdigest(),16)%MAXSIZE)
+    return(abs(int(hashlib.sha224(input1).hexdigest(),16)%MAXSIZE))
+    # return(abs(int(hashlib.sha224(input1).hexdigest(),16))%MAXSIZE)
+
     # return abs(hash(str(hash(str(input)))))
 
 # INPUT: keyword - keyword for file
@@ -88,7 +94,7 @@ def makeHashList(address_list):
         addressHash = hashIt(address_list[x])
         single = [addressHash,address_list[x]] # create a tuple with the hash and then the address
         hash_list.append(single)
-
+    print [sorted(hash_list)]
     return sorted(hash_list)
 
 # ----------------------------- SETUP HOST LIST / HOST DICT ---------------------------------------
