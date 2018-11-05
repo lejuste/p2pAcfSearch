@@ -9,7 +9,7 @@ def ipBuilder(ip_itter):
 
 def viewBuilder(nodes):
 	view = "VIEW=\""
-	for i in range(1,nodes+1):
+	for i in range(2,nodes+2):
 		view += "10.0.0." + str(i) + ":8080,"
 	return view.rstrip(",") + "\""
 
@@ -38,7 +38,7 @@ def main():
 
 	rm_containers()
 	build_kvs()
-	docker_run(3,True,0)
+	docker_run(20,True,20)
 
 if __name__== "__main__":
     main()

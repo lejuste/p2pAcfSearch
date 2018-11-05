@@ -13,7 +13,7 @@ import json
 import time
 
 app = Flask(__name__)
-
+print 'starting node!'
 # ----------------------------- SETUP ENVIRONMENTAL VARIABLES -------------------------------------
 IP_ENV = os.environ.get('ip')      #.get() is a safe way to get values from a dictionary if their key might not exist
 VIEW = os.environ.get('VIEW')
@@ -162,7 +162,7 @@ def addFile(fileName,keywords,hash_list):
     for i in range(len(fileLocations)):
         payload = {'fileName': fileName, 'keywords':[keywords[i]]}
         print 'FORWARDING ' + str(payload) + ' to ' + 'http://'+fileLocations[i]+'/data'
-        r = requests.put('http://'+fileLocations[i]+'/data', json = payload)        
+        r = requests.post('http://'+fileLocations[i]+'/data', json = payload)        
 
     if perfectHit:
         j = jsonify(msg='success', owner=fileLocation, file=fileName, keywords = keywords )
@@ -243,7 +243,7 @@ def search_keywords(keywords,hash_list,searchType):
         print nextNode
         payload = {'startTime': startTime, 'keywords': remainingKeywords, 'currentFilter':nodeFilter.vector}
         print 'FORWARDING ' + str(payload) + ' to ' + 'http://'+nextNode+'/search'
-        r = requests.put('http://'+nextNode+'/search', json = payload)        
+        r = requests.post('http://'+nextNode+'/search', json = payload)        
 
         print getJsonAttribute(r.text,'final time')
         return (make_response(r.text,r.status_code,{'Content-Type':'application/json'}))  
@@ -312,7 +312,7 @@ def  internal_search_keywords(startTime,keywords,currentFilter = None):
         print nextNode
         payload = {'startTime': startTime, 'keywords': remainingKeywords, 'currentFilter':nodeFilter.vector}
         print 'FORWARDING ' + str(payload) + ' to ' + 'http://'+nextNode+'/search'
-        r = requests.put('http://'+nextNode+'/search', json = payload)        
+        r = requests.post('http://'+nextNode+'/search', json = payload)        
 
     else:
         # return the keywords and the current time!!!!!
@@ -334,14 +334,14 @@ def hello_world():
 
 
 
-@app.route('/search', methods=['GET','PUT','DELETE'])
+@app.route('/search', methods=['GET','PUT','POST','DELETE'])
 def searchMethod():
     global lookup
     global hostDictionary
     global hostList
     global hash_list
 
-    if request.method == 'PUT':
+    if request.method == 'POST':
         jsonObj = request.get_json(silent=True)
         keywords = jsonObj.get('keywords', None)
         startTime = jsonObj.get('startTime', None)
@@ -357,16 +357,28 @@ def searchMethod():
             print 'in else'
             return internal_search_keywords(startTime,keywords,currentFilter)
 
+    else:
+        j = jsonify(msg='FAIL!!!')
+        return (make_response(j,200,{'Content-Type':'application/json'}))  # '''RECEIVE HOST LIST UPDATE TO REMOVE OR ADD A NODE TO LOCAL 'VIEW'''
+
 '''key-value GET, PUT, and DELETE Requests'''
-@app.route('/data', methods=['GET', 'PUT','POST','DELETE'])
+@app.route('/data', methods=['POST','GET','PUT','DELETE'])
 def stuff():
     global lookup
     global hostDictionary
     global hostList
     global hash_list
-
-    if request.method == 'PUT':
+    print 'got it'
+    if request.method == 'POST':
+        print 'got put'
+        # data = request.data
+        # dataDict = json.loads(data)
+        # print dataDict
+        # print dataDict.get('fileName')
+        # print dataDict.get('keywords')
         jsonObj = request.get_json(silent=True)
+        print 'get json obj'
+        print jsonObj
         fileName= jsonObj.get('fileName', None)
         keywords = jsonObj.get('keywords', None)
 
@@ -374,136 +386,16 @@ def stuff():
             j = jsonify(replaced=0, msg='fail', test="filename or keywords undefined")
             return (make_response(j,200,{'Content-Type':'application/json'}))
         # update hash list!
-        # print 'valid put request'
-        # print hostlist
-        # print 'fileName keywords: '
-        # print fileName
-        # print keywords
-
-        # hash_list = makeHashList(hostlist)
+        print 'valid put request'
+        print hostlist
+        print 'fileName keywords: '
+        print fileName
+        print keywords
         return addFile(fileName,keywords,hash_list)
 
-
-# '''RECEIVE HOST LIST UPDATE TO REMOVE OR ADD A NODE TO LOCAL 'VIEW'''
-# @app.route('/kvs/update_hostlist', methods=['PUT'])
-# def hostList_update():
-#     if request.method == 'PUT':
-
-#         request_ipPort = request.form.get('input_host')
-#         request_type = request.form.get('request_type')
-#         global hostDictionary
-
-#         if(request_type == 'add'):
-#             # add new host to local local directory
-#             if (request_ipPort not in hostlist):
-#                 hostlist.append(str(request_ipPort))
-#                 hostDictionary = dict((host,abs(hash(host))) for host in hostlist)
-#                 #hostDictionary = make_ip_hash(hostlist)
-                
-#         elif(request_type == 'remove'):
-#             #removes new host from local directory
-#             if(request_ipPort in hostlist):
-#                 hostlist.remove(str(request_ipPort))
-#                 hostDictionary = dict((host,abs(hash(host))) for host in hostlist)
-
-#         j = jsonify(msg='success',hostDictionary=str(list(hostDictionary.keys())),hostList=str(hostlist),lastHost=request_ipPort,request_type=request_type)
-#         return (make_response(j,200,{'Content-Type':'application/json'}))
-
-# #adding/deleting nodes -------------------------------
-# @app.route('/kvs/view_update', methods=['PUT'])
-# def viewUpdate():
-#     global hostDictionary
-#     if request.method == 'PUT':   
-
-#         # parse request form
-#         request_ipPort = request.form.get('ip_port') 
-#         request_type = request.form.get('type')
-#         forwardedIP_port = request.form.get('forwardedIP_port')
-        
-
-#         if request_type == 'add':
-#             # check if new ip is in hostDictionary   
-            
-#             #Determine who is the successor of the new node.
-#             successor = findSuccessor(request_ipPort, hostDictionary)
-
-
-#             if successor == ip_port: #We are the successor of the incoming node
-#                 #add node to local hostDictionary
-#                 hostlist.append(str(request_ipPort))
-#                 hostDictionary[str(request_ipPort)] = hashIt(str(request_ipPort))
-
-#                 #update the new node's hostlist with existing IP's
-#                 for host in list(hostDictionary.keys()):
-#                     #put request to new node
-#                     if host == request_ipPort:
-#                         continue
-#                     r = requests.put('http://'+str(request_ipPort)+'/kvs/update_hostlist',data = {'input_host':str(host),'request_type':'add'})
-
-#                 # send all keys that belong to the new node to the new node
-#                 i = 0
-#                 for key in lookup.keys():
-#                     if (hashIt(str(key)) < hashIt(str(request_ipPort))): #does key belong at new node?
-#                         i = i + 1
-#                         #add key to new node, delete key from old node
-#                         r = requests.put('http://'+str(request_ipPort)+'/kvs', data = {'key':str(key),'value':lookup[key]})
-#                         lookup.pop(key, None) 
-#                         if(i > 100):
-#                             break
-
-#                 #broadcast: send put request with new node info to all nodes EXCEPT new node, forwarding node, and successor
-#                 for host in list(hostDictionary.keys()):            
-#                     if ((host == request_ipPort) or (host == ip_port) or (host == forwardedIP_port)):      
-#                         pass
-#                     else:
-#                         r = requests.put('http://'+str(host)+'/kvs/update_hostlist',data = {'input_host':str(request_ipPort),'request_type':'add'})
-
-    
-#                 ##########wait for confirmation###########
-
-#                 j = jsonify(msg= 'success', text=str(r.text),statusCode=str(r.status_code))
-#                 return (make_response(j,200,{'Content-Type':'application/json'}))
-
-#             else:   #not successor node (forward request to successor)
-#                 r = requests.put('http://'+str(successor)+'/kvs/view_update', data={'ip_port':str(request_ipPort), 'type':'add', 'forwardedIP_port':str(ip_port)})
-            
-#                 hostlist.append(str(request_ipPort))
-#                 hostDictionary[str(request_ipPort)] = hashIt(str(request_ipPort))
-#                 j = jsonify(msg='success', hostDict= str(hostDictionary.keys()))
-#                 return (make_response(j,200,{'Content-Type':'application/json'}))
-
-#         elif request_type == 'remove':
-#             #check if we are the node to be deleted
-#             if request_ipPort == ip_port:
-#                 hostDictionary.pop(str(ip_port))
-                
-#                 # j = jsonify(msg="success", ip_port=ip_port)
-#                 # return (make_response(j,200,{'Content-Type':'application/json'}))
-                
-#                 successor = findSuccessor(ip_port, hostDictionary)
-
-#                 j = jsonify(msg="success", ip_port=ip_port)
-#                 return (make_response(j,200,{'Content-Type':'application/json'}))
-
-#                 for key in lookup.keys():
-#                     r = requests.put('http://'+str(successor)+'/kvs', data ={'key':str(key), 'value':str(lookup[key])})
-
-#                 j = jsonify(msg="success", ip_port=ip_port)
-#                 return (make_response(j,200,{'Content-Type':'application/json'}))
-#             else:
-#                 #forward to node to be deleted
-#                 r = requests.put('http://'+request_ipPort+'/kvs/view_update', data={'ip_port':str(request_ipPort), 'type':'remove', 'forwardedIP_port':str(ip_port)})
-#                 hostDictionary.pop(str(request_ipPort),None)
-#                 hostlist.remove(str(request_ipPort))
-
-#                 #tell everyone to remove node from hostlist
-#                 for host in list(hostDictionary.keys()):
-#                     if (host==ip_port):
-#                         continue
-#                     r = requests.put('http://'+str(host)+'/kvs/update_hostlist',data = {'input_host':str(request_ipPort),'request_type':'remove'})
-
-#                 j = jsonify(msg='success', json=r.json())
-#                 return (make_response(j,200,{'Content-Type':'application/json'}))     
+    else:
+        j = jsonify(msg='FAIL!!!')
+        return (make_response(j,200,{'Content-Type':'application/json'}))  # '''RECEIVE HOST LIST UPDATE TO REMOVE OR ADD A NODE TO LOCAL 'VIEW'''
 
 #debugging code --------------------------------------
 
@@ -512,6 +404,13 @@ def printBloomDicts(bloom_dict):
     for key in bloom_dict.keys():
         dictString = dictString +  + key + "\n" + str(bloom_dict.get(key,'None'))
     return dictString
+
+
+
+@app.route('/fileCount', methods=['GET'])
+def count():
+    if request.method == 'GET': 
+        return jsonify(count=len(lookup))
 
 
 @app.route('/throwup', methods=['GET'])
