@@ -8,7 +8,7 @@ parser = OptionParser()
 parser.add_option("-f", "--files", dest="files", help="number of files for the system", default=1000)
 parser.add_option("-k", "--keywords", dest="keys", help="keywords per file", default=5)
 parser.add_option("-i", "--input", dest="input", help="input file for a list of keyword options", default="google-10000-english-master/google-10000-english-usa-no-swears-medium.txt")
-parser.add_option("-n", "--nodes", dest="nodes", help="number of nodes for the system", default=2)
+parser.add_option("-n", "--nodes", dest="nodes", help="number of nodes for the system", default=3)
 
 (options, args) = parser.parse_args()
 
@@ -46,14 +46,14 @@ def postRandomFiles():
 		keys = getKeywordArray(number_of_keywords)
 		file =  getRandomWord()
 		payload = {"fileName":file,"keywords":keys}
-		print 'adding ' + file + ' with ' + str(keys) + 'to ' + url
+		print('adding ' + file + ' with ' + str(keys) + 'to ' + url)
 		# print url
 		# print file
 		# print payload
 		headers = {'Content-Type': 'application/json'}
 		r = requests.post(url, headers=headers,json = payload)
-		print 'response: ' + r.text
-		print i
+		print('response: ' + r.text)
+		print(i)
 def main():
 	getWordFile()
 

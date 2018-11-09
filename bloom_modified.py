@@ -21,7 +21,7 @@ class BitVector(object):
     def add(self,location):
         if(location < self.size and location > -1):
             self.int |= 1<<location
-            print '1 added at %d'%location
+            print('1 added at %d'%location)
             self.vectorUpdate()
             # print('Bit vector add at %d.'%location)
             return 1
@@ -31,12 +31,12 @@ class BitVector(object):
 
     #check certain location in bit vector
     def check(self,location):
-        print 'checking at location: %d'%location
+        print('checking at location: %d'%location)
         return (self.int >> location) & 1 # test bit 19
 
     #refiles bit vector object from input strine
     def rebuildVector(self,inputFilter):
-        print 'trying to build another filter from a file'
+        # print 'trying to build another filter from a file'
         self.vector = inputFilter
         self.size = len(inputFilter)
         self.int = int(inputFilter,2)
@@ -56,7 +56,7 @@ class BitVector(object):
 
     def bitwiseOr(self,filter2):
         if(len(self.vector) != len(filter2)):
-            print 'error files are not of equal length, vector len: ' + len(self.vector) + ' filter2 length: ' + len(filter2)
+            print('error files are not of equal length, vector len: ' + len(self.vector) + ' filter2 length: ' + len(filter2))
         else:
             orFilter = ''
             for i in range(0,len(self.vector)):
@@ -105,17 +105,17 @@ class Bloomfilter(object):
         self.num_of_elements = self.num_of_elements + 1
 
         # self.updateFilterFile()
-        print 'added %s to filter!!!' % key
+        print('added %s to filter!!!' % key)
 
     def checkFilter(self,key):
         firstHash = int(hashlib.md5(key.encode('UTF-8')).hexdigest(),16) % self.total_bits
         secondHash = int(hashlib.sha1(key.encode('UTF-8')).hexdigest(),16) % self.total_bits
 
         if(self.filter.check(firstHash) and self.filter.check(secondHash)):
-            print 'key: %s is possibly here' % key
+            print('key: %s is possibly here' % key)
             return True
         else:
-            print 'key: %s is definitely not here' % key
+            print('key: %s is definitely not here' % key)
             return False
 
     # super class intersection on sub-objet for intersection   
@@ -135,15 +135,15 @@ def main():
     # bloomObject.addToFilter('KKKKKKKK')
     # bloomObject.addToFilter('abcd')
 
-    print 'Printing bloomObject:'
-    print bloomObject
+    print('Printing bloomObject:')
+    print(bloomObject)
 
-    print 'Printing bloomObject2:'
-    print bloomObject2
+    print('Printing bloomObject2:')
+    print(bloomObject2)
 
-    print bloomObject.intersection(bloomObject2.filter.vector)
+    print(bloomObject.intersection(bloomObject2.filter.vector))
 
-    print 'removing element from the filter'
+    print('removing element from the filter')
 
     bloomObject.removeElementFromFilter()
 

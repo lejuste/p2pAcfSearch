@@ -23,7 +23,7 @@ def docker_run(number_of_nodes,detached,run_nodes):
 			bashCommand = "docker run -d -p " + portBuilder(i) + " --net=mynet --ip=" + ipBuilder(i) + " -e " + view + " -e " + ip_portBuilder(i) + " kvs"
 		else:
 			bashCommand = "docker run -p " + portBuilder(i) + " --net=mynet --ip=" + ipBuilder(i) + " -e " + view + " -e " + ip_portBuilder(i) + " kvs"
-		print ">>>>>>>>>>"+bashCommand
+		print(">>>>>>>>>>"+bashCommand)
 		os.system(bashCommand)
 		# if(i+1 >run_nodes+2):
 		# 	break
@@ -38,7 +38,7 @@ def main():
 
 	rm_containers()
 	build_kvs()
-	docker_run(20,True,20)
+	docker_run(3,True,3)
 
 if __name__== "__main__":
     main()

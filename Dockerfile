@@ -1,6 +1,6 @@
 # Use an official Python runtime as a parent image
 
-FROM python:2.7-slim
+FROM python:3.6-slim
 
 # Set the working directory to /app
 
@@ -20,4 +20,4 @@ EXPOSE 8080
 
 # Run app.py when the container launches
 
-CMD ["python", "node_app.py"]
+CMD ["python3", "node_app.py"]

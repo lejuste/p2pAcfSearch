@@ -41,7 +41,7 @@ with outputFile:
 		row = []
 
 		#make file name
-		fileName = (''.join(choice(ascii_uppercase) for i in range(12)))
+		fileName = (''.join(choice(ascii_uppercase) for i in list(range(12))))
 		row.append(fileName)
 
 		#add keywords associated with each file
