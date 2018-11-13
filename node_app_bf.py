@@ -7,6 +7,12 @@ import operator
 import hashlib
 from bloom_modified import Bloomfilter
 from bloom_modified import BitVector
+from cuckoopy import CuckooFilter
+import cuckoo
+from types import MethodType
+# Initialize a cuckoo filter with 10000 buckets with bucket size 4 and fingerprint size of 1 byte
+cf = CuckooFilter(capacity=10000, bucket_size=4, fingerprint_size=1)
+print ('cuckoo import successful, response: ', cf.insert('Hello!'))
 
 import json
 
@@ -14,6 +20,14 @@ import time
 
 app = Flask(__name__)
 print ('starting node!')
+
+
+
+# cf.method4printing = MethodType(printIt, cf)
+# cf.method4printing()
+readCF(cf)
+
+
 # ----------------------------- SETUP ENVIRONMENTAL VARIABLES -------------------------------------
 IP_ENV = os.environ.get('ip')      #.get() is a safe way to get values from a dictionary if their key might not exist
 VIEW = os.environ.get('VIEW')
@@ -95,6 +109,15 @@ def rebuildBloomFilter(keywords):
     return
     # print 'total time ' + str(totalTime)
     # return totalTime
+
+
+def readCF(obj):
+    obj.method4printing = MethodType(cuckoo.printIt, obj)
+    obj.method4printing()
+
+def setCF(obj):
+    obj.method4printing = MethodType(cuckoo.printIt, obj)
+    obj.method4printing()
 
 # ----------------------------- DIRECTORY FOR ROUTING ---------------------------------------------
 

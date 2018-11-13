@@ -1,118 +1,117 @@
 #cuckoo
-import math
-import hashlib
-import os.path
-from bloom import BitVector
-
-#bit vector object
-class BitVector(object):
-    def __str__(self):
-        return "Size: %d\nVector: %s\nInt: %d" %(self.size, self.vector, self.int)
-    def vectorUpdate(self):
-    #add function
-    def add(self,location):
-    #check certain location in bit vector
-    def check(self,location):
-    #refiles bit vector object from input strine
-    def rebuildVector(self,inputFilter):
-    #returns filter intersection with input string
-    def intersection(self,filter2):
+from cuckoopy import CuckooFilter
 
 
+# class CuckooFilter:
+    # self.capacity = capacity
+    # self.bucket_size = bucket_size
+    # self.fingerprint_size = fingerprint_size
+    # self.max_displacements = max_displacements
+    # self.buckets = [bucket.Bucket(size=bucket_size)
+    #                 for _ in range(self.capacity)]
+    # self.size = 0
 
-    #default: k = 2
-    #default: total _bits = 2500
-    #hashes availible: md5,sha1,sha224,sha256,sha384,sha512
-class Bloomfilter(object):
-    #if file is defined make make the filter from the file!!!!
-    #else create a new file
-    def __init__(self,file,k=2):
-        self.num_of_hash = 2    #k
-        self.total_bits = 2500  #m
-        self.expected_num_of_elements = 100 #n
-        self.num_of_elements = 0
-        # self.false_positive_rate = (1-math.exp(-self.num_of_hash*self.expected_num_of_elements/self.total_bits))*self.num_of_hash,
-        self.filter = BitVector(self.total_bits)
-        self.file = file
-
-        if(os.path.exists(file)):
-            self.extractFilterFromFile(file)
+def toString(self):
+    returnString = ""
+    for bucket in self.buckets:
+        if(len(str(bucket)[10:-2]) < 1):
+            returnString += "0,"
         else:
-            self.updateFilterFile()
-
-    def __str__(self):
-        return "num_of_hash: %d\ntotal_bits: %d\nexpected_num_of_elements: %d\nfilter: %s\nfile: %s\n" %(self.num_of_hash, self.total_bits, self.expected_num_of_elements, self.filter, self.file)
-
-    #adds new key to filter
-    def addToFilter(self,key):
-        #key is hashed twice and added to the filter object
-        # firstHash = int(hashlib.md5(key.encode('UTF-8')).hexdigest(),16) % self.total_bits
-        # secondHash = int(hashlib.sha1(key.encode('UTF-8')).hexdigest(),16) % self.total_bits
-        # self.filter.add(firstHash)
-        # self.filter.add(secondHash)
-        # #increment number of elements within the filter
-        # self.num_of_elements = self.num_of_elements + 1
-        # self.updateFilterFile()
-        # print 'added %s to filter!!!' % key
-
-    # hashes key and checks if key is within the file
-    def checkFilter(self,key):
-        # firstHash = int(hashlib.md5(key.encode('UTF-8')).hexdigest(),16) % self.total_bits
-        # secondHash = int(hashlib.sha1(key.encode('UTF-8')).hexdigest(),16) % self.total_bits
-        # if(self.filter.check(firstHash) and self.filter.check(secondHash)):
-        #     print 'key: %s is possibly here' % key
-        #     return 1
-        # else:
-        #     print 'key: %s is definitely not here' % key
-        #     return 0
-
-    # update filter file with integer representation
-    def updateFilterFile(self):
-        #int files
-        # bloomFile = open(self.file,'wb')
-        # bloomFile.write(str(self.filter.int))
-        # bloomFile.close()
-        #bit files
-        # bloomFile = open(self.file,'wb')
-        # bloomFile.write(str(self.filter.vector))
-        # print 'filter length: %d'%len(self.filter.vector)
-        # bloomFile.close()
-
-    # extract filter from file
-    def extractFilterFromFile(self,file):
-        # bloomFile = open(file,'r')
-        # contents = bloomFile.read()
-        # self.num_of_hash = 2    #k
-        # self.total_bits = len(contents) #m
-        # self.expected_num_of_elements = 100 #n
-        # self.num_of_elements = 0
-        # self.filter = BitVector(self.total_bits)
-        # self.filter.rebuildVector(contents)
-        # bloomFile.close()        
+            returnString += str(bucket)[10:-2] + ","
 
 
-    # super class intersection on sub-objet for intersection   
-    def intersection(self,filter2):
-        # return self.filter.intersection(filter2)
+    print ( "return string from to string: " + returnString[:-1])
+    print( self.bucket_size)
+    print( self.capacity)
+    return returnString[:-1]
+
+
+def fromString(self,cfString):
+    print (cfString)
+    print ('cfString')
+    bucket_list = cfString.split(',')
+    print (len(bucket_list))
+    for i in range(len(bucket_list)):
+        if(int(bucket_list[i]) > 0):
+            print (i)
+            print ( bucket_list[i])
+            self.buckets[i].insert(int(bucket_list[i]))
+            self.size = self.size + 1
+
+
+    # returnString = ""
+    # for bucket in self.buckets:
+    #     returnString += str(bucket) + ","
+
+
+def printIt(self):
+    print (self.size)
+    print (self.size + 1)
+    print ('cuckoo!')
+    print (self.buckets)
+
+
+ # .contains
+ # .insert
+ # .delete
+ # .len
+
+def bloomItemExists(keyword):
+    global bloomDict
+    for item in bloomDict:
+        if item == keyword:
+            return True
+    return False
+
+def bloomItemAdd(keyword,fileName):
+    global bloomDict
+
+    # if bloom item exists, print
+    if(bloomItemExists(keyword)):
+        keyBloom = bloomDict.get(keyword, [])
+        keyBloom.addToFilter(fileName)
+    else:
+        new_keyword_filter = Bloomfilter(keyword)
+        new_keyword_filter.addToFilter(fileName)
+        bloomDict[keyword] = new_keyword_filter
+
+def bloomItemCheck(keyword):
+    if(bloomItemExists(keyword)):
+        theFilter = bloomDict.get(keyword, [])
+        # print 'results:'
+        # print theFilter.checkFilter(keyword)
+        # print 'end of results'
+        return theFilter.checkFilter(keyword)
+    else:
+        return 0
+
+def getKeywordFilter(keyword):
+    return bloomDict.get(keyword, 0)
+
+def bloomItemIntersection(filter1,filter2):
+    return filter1 & filter2
+
+def rebuildBloomFilter(keywords):
+    # startTime = time.time()
+    global lookup
+    global bloomDict
+    # print 'startTime: ' + str(startTime)
+    bloomDict = {}
+
+    for fileName in lookup:
+        keywords = lookup.get(fileName,[])
+        print(('keywords: ' + str(keywords) + ' for ' + fileName))
+        for tag in keywords:
+            print(('empty bloom dict' + str(bloomDict)))
+            bloomItemAdd(tag,fileName)
+    return
+    # print 'total time ' + str(totalTime)
+    # return totalTime
+
+
 
 
 def main():
-
-    #tester code for bloom object
-    # bloomObject = Bloomfilter('bloombaby.txt')
-    # bloomObject2 = Bloomfilter('bf_keyword.txt')
-
-    # # bloomObject.addToFilter('KKKKKKKK')
-    # # bloomObject.addToFilter('abcd')
-
-    # print 'Printing bloomObject:'
-    # print bloomObject
-
-    # print 'Printing bloomObject2:'
-    # print bloomObject2
-
-    # print bloomObject.intersection(bloomObject2.filter.vector)
-
-
+    print("Hello World!")
 if __name__== "__main__":
     main()

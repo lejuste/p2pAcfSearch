@@ -20,4 +20,4 @@ EXPOSE 8080
 
 # Run app.py when the container launches
 
-CMD ["python3", "node_app.py"]
+CMD ["python3", "node_app_cf.py"]
