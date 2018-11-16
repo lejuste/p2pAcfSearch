@@ -1,5 +1,11 @@
 # python run program
 import os
+from optparse import OptionParser
+parser = OptionParser()
+parser.add_option("-n", "--nodes", dest="nodes", help="number of nodes for the system", default=10)
+(options, args) = parser.parse_args()
+nodes_num = int(options.nodes)
+
 
 def portBuilder(port_itter):
 	return str(8000+port_itter) + ":8080"
@@ -38,7 +44,7 @@ def main():
 
 	rm_containers()
 	build_kvs()
-	docker_run(3,True,3)
+	docker_run(nodes_num,True,nodes_num)
 
 if __name__== "__main__":
     main()

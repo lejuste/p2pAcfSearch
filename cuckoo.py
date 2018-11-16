@@ -26,6 +26,10 @@ def toString(self):
     return returnString[:-1]
 
 
+# check for more things in each bucket and create a method for that
+# check in add and from
+
+
 def fromString(self,cfString):
     print (cfString)
     print ('cfString')
@@ -38,8 +42,21 @@ def fromString(self,cfString):
             self.buckets[i].insert(int(bucket_list[i]))
             self.size = self.size + 1
 
+# def createListFromString()
+# def combine2cfFilters(self,other_cfObj):
+#     print (other_cfObj)
 
-    # returnString = ""
+#     print ('cfString')
+#     bucket_list = cfString.split(',')
+#     print (len(bucket_list))
+#     for i in range(len(bucket_list)):
+#         if(int(bucket_list[i]) > 0):
+#             print (i)
+#             print ( bucket_list[i])
+#             self.buckets[i].insert(int(bucket_list[i]))
+#             self.size = self.size + 1
+
+#     # # returnString = ""
     # for bucket in self.buckets:
     #     returnString += str(bucket) + ","
 
@@ -56,57 +73,57 @@ def printIt(self):
  # .delete
  # .len
 
-def bloomItemExists(keyword):
-    global bloomDict
-    for item in bloomDict:
-        if item == keyword:
-            return True
-    return False
+# def bloomItemExists(keyword):
+#     global bloomDict
+#     for item in bloomDict:
+#         if item == keyword:
+#             return True
+#     return False
 
-def bloomItemAdd(keyword,fileName):
-    global bloomDict
+# def bloomItemAdd(keyword,fileName):
+#     global bloomDict
 
-    # if bloom item exists, print
-    if(bloomItemExists(keyword)):
-        keyBloom = bloomDict.get(keyword, [])
-        keyBloom.addToFilter(fileName)
-    else:
-        new_keyword_filter = Bloomfilter(keyword)
-        new_keyword_filter.addToFilter(fileName)
-        bloomDict[keyword] = new_keyword_filter
+#     # if bloom item exists, print
+#     if(bloomItemExists(keyword)):
+#         keyBloom = bloomDict.get(keyword, [])
+#         keyBloom.addToFilter(fileName)
+#     else:
+#         new_keyword_filter = Bloomfilter(keyword)
+#         new_keyword_filter.addToFilter(fileName)
+#         bloomDict[keyword] = new_keyword_filter
 
-def bloomItemCheck(keyword):
-    if(bloomItemExists(keyword)):
-        theFilter = bloomDict.get(keyword, [])
-        # print 'results:'
-        # print theFilter.checkFilter(keyword)
-        # print 'end of results'
-        return theFilter.checkFilter(keyword)
-    else:
-        return 0
+# def bloomItemCheck(keyword):
+#     if(bloomItemExists(keyword)):
+#         theFilter = bloomDict.get(keyword, [])
+#         # print 'results:'
+#         # print theFilter.checkFilter(keyword)
+#         # print 'end of results'
+#         return theFilter.checkFilter(keyword)
+#     else:
+#         return 0
 
-def getKeywordFilter(keyword):
-    return bloomDict.get(keyword, 0)
+# def getKeywordFilter(keyword):
+#     return bloomDict.get(keyword, 0)
 
-def bloomItemIntersection(filter1,filter2):
-    return filter1 & filter2
+# def bloomItemIntersection(filter1,filter2):
+#     return filter1 & filter2
 
-def rebuildBloomFilter(keywords):
-    # startTime = time.time()
-    global lookup
-    global bloomDict
-    # print 'startTime: ' + str(startTime)
-    bloomDict = {}
+# def rebuildBloomFilter(keywords):
+#     # startTime = time.time()
+#     global lookup
+#     global bloomDict
+#     # print 'startTime: ' + str(startTime)
+#     bloomDict = {}
 
-    for fileName in lookup:
-        keywords = lookup.get(fileName,[])
-        print(('keywords: ' + str(keywords) + ' for ' + fileName))
-        for tag in keywords:
-            print(('empty bloom dict' + str(bloomDict)))
-            bloomItemAdd(tag,fileName)
-    return
-    # print 'total time ' + str(totalTime)
-    # return totalTime
+#     for fileName in lookup:
+#         keywords = lookup.get(fileName,[])
+#         print(('keywords: ' + str(keywords) + ' for ' + fileName))
+#         for tag in keywords:
+#             print(('empty bloom dict' + str(bloomDict)))
+#             bloomItemAdd(tag,fileName)
+#     return
+#     # print 'total time ' + str(totalTime)
+#     # return totalTime
 
 
 

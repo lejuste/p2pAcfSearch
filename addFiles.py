@@ -3,6 +3,9 @@ import requests
 import random
 from optparse import OptionParser
 import json
+import csv 
+import time
+
 #inputs: number of files, number of keywords, input file, output file
 parser = OptionParser()
 parser.add_option("-f", "--files", dest="files", help="number of files for the system", default=1000)
@@ -18,6 +21,8 @@ number_of_nodes = int(options.nodes)
 number_of_keywords = int(options.keys)
 input_file = str(options.input)
 global words
+global dataDict
+dataDict = dict()
 
 def getWordFile():
 	global words
@@ -35,36 +40,68 @@ def getRandomWord():
 	global words
 	return random.choice(words)
 
-def getRandomHostUrl():
-	# hello = 8000+random.randint(2,number_of_nodes+2)
-	# return "hi" + str(hello)
+def getRandomHostUrlforData():
 	return "http://localhost:" + str(8000+random.randint(2,number_of_nodes+1)) + "/data"
 
+def getRandomHostUrlforSearch():
+	return "http://localhost:" + str(8000+random.randint(2,number_of_nodes+1)) + "/search"
+
 def postRandomFiles():
+	# with open('names.csv', 'w') as csvfile:
+	# 	fieldnames = ['fileName', 'Keywords']
+	# 	writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+	# 	writer.writeheader()
+
 	for i in range(number_of_files):
-		url = getRandomHostUrl()
+		print (i)
+		url = getRandomHostUrlforData()
 		keys = getKeywordArray(number_of_keywords)
 		file =  getRandomWord()
 		payload = {"fileName":file,"keywords":keys}
 		print('adding ' + file + ' with ' + str(keys) + 'to ' + url)
-		# print url
-		# print file
-		# print payload
+		dataDict[file]=keys
 		headers = {'Content-Type': 'application/json'}
 		r = requests.post(url, headers=headers,json = payload)
-		print('response: ' + r.text)
-		print(i)
+		time.sleep(3)
+
+		# print('response: ' + r.text)
+			# writer.writerow({'fileName': file, 'Keywords': str(keys)})
+
+def returnTime(response):
+
+	data = json.loads(response)
+	return str(data['finalTime'])
+	
+def searchForFiles():
+	timeFileName = str("timeTrials/time_file_for_" + str(number_of_nodes)+"_nodes_.txt")
+	fileOut = open(timeFileName,"w+") 
+	j = 0
+	for file in dataDict.keys():
+		print(j)
+		j+=1
+		keys =  dataDict.get(file,0)
+
+		url = getRandomHostUrlforSearch()
+		payload = {"keywords":keys}
+		print('searching with ' + str(keys) + 'to ' + url)
+		headers = {'Content-Type': 'application/json'}
+		r = requests.post(url, headers=headers,json = payload, timeout = 5)
+		print(r.text)
+		fileOut.write(str(returnTime(r.text) + "\n"))
+
+	fileOut.close() 
+
+
+
 def main():
 	getWordFile()
-
 	postRandomFiles()
-
-
-
-
+	print('done post')
+	searchForFiles()
+	print('done search')
 
 
 if __name__== "__main__":
-    main()
+	main()
 
 

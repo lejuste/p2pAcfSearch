@@ -41,12 +41,14 @@ def combineCF(obj):
     obj.method4printing = MethodType(cuckoo.printIt, obj)
     obj.method4printing()
 
-hi = readCF(cf)
+cf_string = readCF(cf)
+
 new_cf = CuckooFilter(capacity=10000, bucket_size=4, fingerprint_size=1)
 
-setCF(new_cf,hi)
+setCF(new_cf,cf_string)
 print (new_cf)
 hi2 = readCF(new_cf)
+
 
 
 # ----------------------------- SETUP ENVIRONMENTAL VARIABLES -------------------------------------
@@ -300,7 +302,9 @@ def search_keywords(keywords,hash_list,searchType):
     # must forward: startTime(),remaining keywords,currentFilter
     startTime = time.time()
     # print 'start time: ' + str(startTime)
-    nodeFilter = BitVector()
+    # nodeFilter = BitVector()
+    nodeFilter = CuckooFilter(capacity=10000, bucket_size=4, fingerprint_size=1)
+
     remainingKeywords = []
 
     for keyword in keywords:
@@ -310,8 +314,11 @@ def search_keywords(keywords,hash_list,searchType):
             print(('found: ' + keyword))
             filterObject = getKeywordFilter(keyword)
             if(filterObject):
-                keyVector = filterObject.getBitVector()
-                nodeFilter.bitwiseOr(keyVector)
+                keyvector = readCF(filterObject)
+                setCF(nodeFilter,keyvector)
+
+                # keyVector = filterObject.getBitVector()
+                # nodeFilter.bitwiseOr(keyVector)
         else:
             remainingKeywords.append(keyword)
 
@@ -320,7 +327,7 @@ def search_keywords(keywords,hash_list,searchType):
         print('finding next node')
         nextNode = findOwner(remainingKeywords[0],hash_list)
         print(nextNode)
-        payload = {'startTime': startTime, 'keywords': remainingKeywords, 'currentFilter':nodeFilter.vector}
+        payload = {'startTime': startTime, 'keywords': remainingKeywords, 'currentFilter':readCF(nodeFilter)}
         print(('FORWARDING ' + str(payload) + ' to ' + 'http://'+nextNode+'/search'))
         r = requests.post('http://'+nextNode+'/search', json = payload)        
 
@@ -331,11 +338,14 @@ def search_keywords(keywords,hash_list,searchType):
 
         print('all files are local')
         # return the keywords and the current time!!!!!
-        finalFilter = Bloomfilter()
-        finalFilter.filterUpdate(nodeFilter.vector)
+        # finalFilter = Bloomfilter()
+        finalFilter = CuckooFilter(capacity=10000, bucket_size=4, fingerprint_size=1)
+        setCF(finalFilter,readCF(nodeFilter))
+        # finalFilter.filterUpdate(nodeFilter.vector)
         results = []
         for file in lookup:
-            if finalFilter.checkFilter(file):
+            # if finalFilter.checkFilter(file):
+            if finalFilter.contains(file):
                 results.append(file)
 
         totalTime = time.time() - startTime
@@ -379,9 +389,12 @@ def  internal_search_keywords(startTime,keywords,currentFilter = None):
     # must forward: startTime(),remaining keywords,currentFilter
     # startTime = time.time()
     # print 'start time: ' + str(startTime)
-    nodeFilter = BitVector()
+    # nodeFilter = BitVector()
+    nodeFilter = CuckooFilter(capacity=10000, bucket_size=4, fingerprint_size=1)
+
     if currentFilter != None:
-        nodeFilter.rebuildVector(currentFilter)
+        setCF(nodeFilter,currentFilter)
+        # nodeFilter.rebuildVector(currentFilter)
     remainingKeywords = []
     print(nodeFilter)
     for keyword in keywords:
@@ -391,8 +404,8 @@ def  internal_search_keywords(startTime,keywords,currentFilter = None):
             print(('found: ' + keyword))
             filterObject = getKeywordFilter(keyword)
             if(filterObject):
-                keyVector = filterObject.getBitVector()
-                nodeFilter.bitwiseOr(keyVector)
+                keyvector = readCF(filterObject)
+                setCF(nodeFilter,keyvector)
         else:
             remainingKeywords.append(keyword)
 
@@ -401,7 +414,7 @@ def  internal_search_keywords(startTime,keywords,currentFilter = None):
         print('finding next node')
         nextNode = findOwner(remainingKeywords[0],hash_list)
         print(nextNode)
-        payload = {'startTime': startTime, 'keywords': remainingKeywords, 'currentFilter':nodeFilter.vector}
+        payload = {'startTime': startTime, 'keywords': remainingKeywords, 'currentFilter':readCF(nodeFilter)}
         print(('FORWARDING ' + str(payload) + ' to ' + 'http://'+nextNode+'/search'))
         r = requests.post('http://'+nextNode+'/search', json = payload)       
 
@@ -409,16 +422,22 @@ def  internal_search_keywords(startTime,keywords,currentFilter = None):
         return (make_response(r.text,r.status_code,{'Content-Type':'application/json'}))  
     else:
         # return the keywords and the current time!!!!!
-        finalFilter = Bloomfilter()
-        finalFilter.filterUpdate(nodeFilter.vector)
+        print('all files are local')
+        # return the keywords and the current time!!!!!
+        # finalFilter = Bloomfilter()
+        finalFilter = CuckooFilter(capacity=10000, bucket_size=4, fingerprint_size=1)
+        setCF(finalFilter,readCF(nodeFilter))
+        # finalFilter.filterUpdate(nodeFilter.vector)
         results = []
         for file in lookup:
-            if finalFilter.checkFilter(file):
+            # if finalFilter.checkFilter(file):
+            if finalFilter.contains(file):
                 results.append(file)
 
         totalTime = time.time() - startTime
         j = jsonify(msg='success',finalTime = totalTime, results = results)
-        return (make_response(j,200,{'Content-Type':'application/json'}))  
+        return (make_response(j,200,{'Content-Type':'application/json'})) 
+
 
 @app.route('/')
 def hello_world():
@@ -543,7 +562,7 @@ def count():
 @app.route('/throwup', methods=['GET'])
 def throwup():
     if request.method == 'GET': 
-        return jsonify(lookupCount=len(lookup),cfCount=len(cuckooDict),lookup=lookup,cfDict=list(cuckooDict.keys()))
+        return jsonify(lookupCount=len(lookup),cfCount=len(cuckooDict),lookup=lookup,cfDict=list(cuckooDict.keys()),cfdictFilter=str(cuckooDict.get(list(cuckooDict.keys())[0])),cfdictFilte3r=str(cuckooDict.get(list(cuckooDict.keys())[0]).buckets),cfdictFilterRead=readCF(cuckooDict.get(list(cuckooDict.keys())[0])))
         # return jsonify(count=len(lookup),lookup=lookup,bloomDict=bloomDict.keys(),bloomPrint=printBloomDicts(bloomDict))# hostlist=hostlist, successor= findSuccessor(ip_port, hostDictionary), lookup=lookup, hash=hashIt(ip_port), ip_port=str(ip_port), hostDictionary=hostDictionary)
 #----------------------------------------------------
 

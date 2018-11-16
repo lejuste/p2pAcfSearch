@@ -6,7 +6,7 @@ import os
 
 #bit vector object
 class BitVector(object):
-    def __init__(self, size = 2500):
+    def __init__(self, size = 20000):
         self.int = 0
         self.size = size
         self.vector = format(self.int,'0'+str(size)+'b')
@@ -75,7 +75,7 @@ class BitVector(object):
 class Bloomfilter(object):
     def __init__(self,intRep = 0):
         self.num_of_hash = 2    #k
-        self.total_bits = 2500  #m
+        self.total_bits = 20000  #m
         self.expected_num_of_elements = 100 #n
         self.num_of_elements = 0
         # self.false_positive_rate = (1-math.exp(-self.num_of_hash*self.expected_num_of_elements/self.total_bits))*self.num_of_hash,

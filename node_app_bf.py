@@ -11,21 +11,21 @@ from cuckoopy import CuckooFilter
 import cuckoo
 from types import MethodType
 # Initialize a cuckoo filter with 10000 buckets with bucket size 4 and fingerprint size of 1 byte
-cf = CuckooFilter(capacity=10000, bucket_size=4, fingerprint_size=1)
-print ('cuckoo import successful, response: ', cf.insert('Hello!'))
+# cf = CuckooFilter(capacity=10000, bucket_size=4, fingerprint_size=1)
+# print ('cuckoo import successful, response: ', cf.insert('Hello!'))
 
 import json
 
 import time
 
 app = Flask(__name__)
-print ('starting node!')
+print ('starting node! blom style')
 
 
 
 # cf.method4printing = MethodType(printIt, cf)
 # cf.method4printing()
-readCF(cf)
+# readCF(cf)
 
 
 # ----------------------------- SETUP ENVIRONMENTAL VARIABLES -------------------------------------
